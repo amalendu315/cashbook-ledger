@@ -1,0 +1,20 @@
+BEGIN TRY
+
+BEGIN TRAN;
+
+-- AlterTable
+ALTER TABLE [dbo].[Ledger] ADD [openingBalance] FLOAT(53) NOT NULL CONSTRAINT [Ledger_openingBalance_df] DEFAULT 0,
+[openingBalanceType] NVARCHAR(1000) NOT NULL CONSTRAINT [Ledger_openingBalanceType_df] DEFAULT 'Dr';
+
+COMMIT TRAN;
+
+END TRY
+BEGIN CATCH
+
+IF @@TRANCOUNT > 0
+BEGIN
+    ROLLBACK TRAN;
+END;
+THROW
+
+END CATCH

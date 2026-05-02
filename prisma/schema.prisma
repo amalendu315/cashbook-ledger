@@ -1,0 +1,152 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+  output = "../generated/prisma"
+}
+
+datasource db {
+  provider = "sqlserver"
+}
+
+// --- MODELS ---
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  role         String   @default("USER") 
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  companyAccess UserCompanyAccess[]
+  transactions  Transaction[]       // Transactions created by this user
+}
+
+model Company {
+  id          String   @id @default(cuid())
+  companyCode String   @unique
+  name        String
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  users                UserCompanyAccess[]
+  ledgers              CompanyLedgerMapping[] // Determines which ledgers are visible to this company
+  
+  // Transaction Relations
+  transactions         Transaction[] @relation("CompanyTransactions")
+  incomingTransfers    Transaction[] @relation("DestinationCompanyTransactions")
+}
+
+model Group {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  ledgers   Ledger[] // A group owns multiple ledgers
+}
+
+model Ledger {
+  id                 String   @id @default(cuid())
+  ledger_name        String
+  ledger_details     String?  @db.NVarChar(Max)
+  isActive           Boolean  @default(true)
+  
+  // --- NEW: Opening Balance Data ---
+  openingBalance     Float    @default(0)
+  openingBalanceType String   @default("Dr") // "Dr" (Debit) or "Cr" (Credit)
+
+  // MANDATORY: Every Ledger MUST belong to a Group
+  groupId            String
+  group              Group    @relation(fields: [groupId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  // OPTIONAL VISIBILITY: The specific companies where this ledger is visible
+  companies          CompanyLedgerMapping[]
+  transactions       Transaction[]          
+}
+
+
+// --- CORE TRANSACTION MODEL ---
+
+model Transaction {
+  id                   String   @id @default(cuid())
+  voucherNo            String   @unique // e.g., CR-1042, BP-205
+  type                 String   // "CASH_RECEIPT", "BANK_PAYMENT", "FUND_TRANSFER"
+
+  // Core Relations
+  companyId            String
+  company              Company  @relation("CompanyTransactions", fields: [companyId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  // Ledger is mandatory for standard Receipts/Payments, but optional for Fund Transfers
+  ledgerId             String?
+  ledger               Ledger?  @relation(fields: [ledgerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  // Destination Company (ONLY used for Fund Transfers)
+  destinationCompanyId String?
+  destinationCompany   Company? @relation("DestinationCompanyTransactions", fields: [destinationCompanyId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  // Financial Data (Crucial for Cash vs Bank deduction logic)
+  amount               Float
+  paymentMode          String   // "Cash" or "Bank" (Determines which balance is affected)
+  businessDate         DateTime
+
+  // Descriptive Data
+  particulars          String   // Who paid / Who was paid (Payee/Payer)
+  remarks              String?  @db.NVarChar(Max)
+
+  // Approval Workflow
+  approvedBy           String?  
+  approvedOver         String?  
+  attachmentUrl        String?  // URL/Path to uploaded proof
+
+  // System Audit Trail
+  createdById          String
+  createdBy            User     @relation(fields: [createdById], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  // Indexes for high-speed reporting
+  @@index([companyId])
+  @@index([ledgerId])
+  @@index([businessDate])
+  @@index([type])
+}
+
+// --- MANY-TO-MANY JOIN TABLES ---
+
+model UserCompanyAccess {
+  userId    String
+  companyId String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  assignedAt DateTime @default(now())
+
+  @@id([userId, companyId])
+  @@index([userId])
+  @@index([companyId])
+}
+
+// Handles the logic: "uss company ke base pe ye decide hoga ke ye ledger kis kis company me dikhega"
+model CompanyLedgerMapping {
+  companyId String
+  ledgerId  String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  ledger    Ledger  @relation(fields: [ledgerId], references: [id], onDelete: Cascade)
+
+  mappedAt  DateTime @default(now())
+
+  @@id([companyId, ledgerId])
+  @@index([companyId])
+  @@index([ledgerId])
+}
