@@ -134,3 +134,63 @@ export async function deleteUser(id: string) {
     return { success: false, error: error.message };
   }
 }
+
+// Fetch a single user's detailed profile
+export async function getUserDetails(id: string) {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id },
+      include: {
+        companyAccess: {
+          include: {
+            company: {
+              select: { id: true, name: true, companyCode: true },
+            },
+          },
+        },
+      },
+    });
+
+    if (!user) return { success: false, error: "User not found." };
+
+    // Format for the UI
+    const formattedUser = {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      status: user.isActive ? "Active" : "Inactive",
+      createdAt: user.createdAt,
+      mappedCompanies:
+        user.role === "ADMIN"
+          ? [{ id: "ALL", name: "All Companies (Global Administrator)", companyCode: "***" }]
+          : user.companyAccess.map((mapping) => mapping.company),
+    };
+
+    return { user: formattedUser, success: true };
+  } catch (error: any) {
+    console.error("Error fetching user details:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+// Admin forced password reset
+export async function adminResetPassword(id: string, plainTextPassword: string) {
+  try {
+    if (!plainTextPassword || plainTextPassword.length < 6) {
+      return { success: false, error: "Password must be at least 6 characters." };
+    }
+
+    const passwordHash = await bcrypt.hash(plainTextPassword, 10);
+
+    await prisma.user.update({
+      where: { id },
+      data: { passwordHash },
+    });
+
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error resetting password:", error);
+    return { success: false, error: error.message };
+  }
+}

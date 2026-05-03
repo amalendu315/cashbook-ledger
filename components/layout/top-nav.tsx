@@ -1,16 +1,13 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
-  Bell,
   Search,
   Menu,
-  X,
   FileText,
   BookOpen,
   Building2,
   Loader2,
-  ArrowRight,
   Clock,
   Calendar,
 } from "lucide-react";
@@ -85,132 +82,137 @@ export function TopNav() {
           <Menu className="h-6 w-6" />
         </button>
 
-        {/* Global Search */}
+        {/* Global Search - Wrapped tightly to enforce dropdown positioning */}
         <div
           className="hidden sm:flex max-w-xl w-full relative"
           ref={searchRef}
         >
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-4 w-4 text-slate-400" />
-          </div>
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onFocus={() => {
-              if (query.length >= 2) setShowDropdown(true);
-            }}
-            className="block w-full pl-10 pr-10 py-2.5 border border-slate-300 rounded-lg leading-5 bg-slate-50 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all shadow-inner"
-            placeholder="Search transactions, ledgers, or companies..."
-          />
-          {isSearching && (
-            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-              <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />
+          <div className="relative w-full">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search className="h-4 w-4 text-slate-400" />
             </div>
-          )}
 
-          {/* YouTube-style Search Dropdown */}
-          {showDropdown && results && (
-            <div className="absolute top-14 left-0 w-full bg-white border border-slate-200 rounded-xl shadow-2xl overflow-hidden z-[100] max-h-[400px] overflow-y-auto animate-in fade-in duration-200">
-              {/* Transactions Section */}
-              {results.transactions.length > 0 && (
-                <div className="border-b border-slate-100 last:border-0 pb-2">
-                  <div className="px-4 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider bg-slate-50">
-                    Transactions
-                  </div>
-                  {results.transactions.map((tx: any) => (
-                    <a
-                      href={`/receipts/cash`}
-                      key={tx.id}
-                      onClick={() => setShowDropdown(false)}
-                      className="flex items-center px-4 py-3 hover:bg-blue-50 transition-colors group cursor-pointer"
-                    >
-                      <div className="bg-blue-100 p-2 rounded-md mr-3 group-hover:bg-blue-200 transition-colors">
-                        <FileText className="h-4 w-4 text-blue-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-slate-700 group-hover:text-blue-700">
-                          {tx.voucherNo} • {tx.company}
-                        </p>
-                        <p className="text-xs text-slate-500 mt-0.5">
-                          ₹{tx.amount} • {tx.type.replace("_", " ")} • {tx.date}
-                        </p>
-                      </div>
-                    </a>
-                  ))}
-                </div>
-              )}
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onFocus={() => {
+                if (query.length >= 2) setShowDropdown(true);
+              }}
+              className="block w-full pl-10 pr-10 py-2.5 border border-slate-300 rounded-lg leading-5 bg-slate-50 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all shadow-inner"
+              placeholder="Search transactions, ledgers, or companies..."
+            />
 
-              {/* Ledgers Section */}
-              {results.ledgers.length > 0 && (
-                <div className="border-b border-slate-100 last:border-0 pb-2">
-                  <div className="px-4 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider bg-slate-50">
-                    Ledgers
-                  </div>
-                  {results.ledgers.map((ledger: any) => (
-                    <a
-                      href={`/masters/ledger`}
-                      key={ledger.id}
-                      onClick={() => setShowDropdown(false)}
-                      className="flex items-center px-4 py-3 hover:bg-emerald-50 transition-colors group cursor-pointer"
-                    >
-                      <div className="bg-emerald-100 p-2 rounded-md mr-3 group-hover:bg-emerald-200 transition-colors">
-                        <BookOpen className="h-4 w-4 text-emerald-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-slate-700 group-hover:text-emerald-700">
-                          {ledger.name}
-                        </p>
-                        <p className="text-xs text-slate-500 mt-0.5">
-                          {ledger.type}
-                        </p>
-                      </div>
-                    </a>
-                  ))}
-                </div>
-              )}
+            {isSearching && (
+              <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />
+              </div>
+            )}
 
-              {/* Companies Section */}
-              {results.companies.length > 0 && (
-                <div className="border-b border-slate-100 last:border-0 pb-2">
-                  <div className="px-4 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider bg-slate-50">
-                    Companies
-                  </div>
-                  {results.companies.map((company: any) => (
-                    <a
-                      href={`/masters/company`}
-                      key={company.id}
-                      onClick={() => setShowDropdown(false)}
-                      className="flex items-center px-4 py-3 hover:bg-purple-50 transition-colors group cursor-pointer"
-                    >
-                      <div className="bg-purple-100 p-2 rounded-md mr-3 group-hover:bg-purple-200 transition-colors">
-                        <Building2 className="h-4 w-4 text-purple-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-slate-700 group-hover:text-purple-700">
-                          {company.name}
-                        </p>
-                        <p className="text-xs text-slate-500 mt-0.5">
-                          Code: {company.code}
-                        </p>
-                      </div>
-                    </a>
-                  ))}
-                </div>
-              )}
-
-              {/* No Results Fallback */}
-              {results.transactions.length === 0 &&
-                results.ledgers.length === 0 &&
-                results.companies.length === 0 &&
-                !isSearching && (
-                  <div className="p-6 text-center text-slate-500">
-                    <Search className="h-8 w-8 mx-auto text-slate-300 mb-2" />
-                    <p className="text-sm">No results found for "{query}"</p>
+            {/* YouTube-style Search Dropdown - Now using standard 'top-full mt-2' */}
+            {showDropdown && results && (
+              <div className="absolute top-full left-0 mt-2 w-full bg-white border border-slate-200 rounded-xl shadow-2xl overflow-hidden z-100 max-h-100 overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-200">
+                {/* Transactions Section */}
+                {results.transactions.length > 0 && (
+                  <div className="border-b border-slate-100 last:border-0 pb-2">
+                    <div className="px-4 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider bg-slate-50">
+                      Transactions
+                    </div>
+                    {results.transactions.map((tx: any) => (
+                      <a
+                        href={`/reports/transactions/${tx.id}`} // Dynamic report route
+                        key={tx.id}
+                        onClick={() => setShowDropdown(false)}
+                        className="flex items-center px-4 py-3 hover:bg-blue-50 transition-colors group cursor-pointer"
+                      >
+                        <div className="bg-blue-100 p-2 rounded-md mr-3 group-hover:bg-blue-200 transition-colors">
+                          <FileText className="h-4 w-4 text-blue-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-slate-700 group-hover:text-blue-700">
+                            {tx.voucherNo} • {tx.company}
+                          </p>
+                          <p className="text-xs text-slate-500 mt-0.5">
+                            ₹{tx.amount} • {tx.type.replace("_", " ")} •{" "}
+                            {tx.date}
+                          </p>
+                        </div>
+                      </a>
+                    ))}
                   </div>
                 )}
-            </div>
-          )}
+
+                {/* Ledgers Section */}
+                {results.ledgers.length > 0 && (
+                  <div className="border-b border-slate-100 last:border-0 pb-2">
+                    <div className="px-4 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider bg-slate-50">
+                      Ledgers
+                    </div>
+                    {results.ledgers.map((ledger: any) => (
+                      <a
+                        href={`/reports/ledger/${ledger.id}`} // Dynamic report route
+                        key={ledger.id}
+                        onClick={() => setShowDropdown(false)}
+                        className="flex items-center px-4 py-3 hover:bg-emerald-50 transition-colors group cursor-pointer"
+                      >
+                        <div className="bg-emerald-100 p-2 rounded-md mr-3 group-hover:bg-emerald-200 transition-colors">
+                          <BookOpen className="h-4 w-4 text-emerald-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-slate-700 group-hover:text-emerald-700">
+                            {ledger.name}
+                          </p>
+                          <p className="text-xs text-slate-500 mt-0.5">
+                            {ledger.type}
+                          </p>
+                        </div>
+                      </a>
+                    ))}
+                  </div>
+                )}
+
+                {/* Companies Section */}
+                {results.companies.length > 0 && (
+                  <div className="border-b border-slate-100 last:border-0 pb-2">
+                    <div className="px-4 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider bg-slate-50">
+                      Companies
+                    </div>
+                    {results.companies.map((company: any) => (
+                      <a
+                        href={`/reports/company/${company.id}`} // Dynamic report route
+                        key={company.id}
+                        onClick={() => setShowDropdown(false)}
+                        className="flex items-center px-4 py-3 hover:bg-purple-50 transition-colors group cursor-pointer"
+                      >
+                        <div className="bg-purple-100 p-2 rounded-md mr-3 group-hover:bg-purple-200 transition-colors">
+                          <Building2 className="h-4 w-4 text-purple-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-slate-700 group-hover:text-purple-700">
+                            {company.name}
+                          </p>
+                          <p className="text-xs text-slate-500 mt-0.5">
+                            Code: {company.code}
+                          </p>
+                        </div>
+                      </a>
+                    ))}
+                  </div>
+                )}
+
+                {/* No Results Fallback */}
+                {results.transactions.length === 0 &&
+                  results.ledgers.length === 0 &&
+                  results.companies.length === 0 &&
+                  !isSearching && (
+                    <div className="p-6 text-center text-slate-500">
+                      <Search className="h-8 w-8 mx-auto text-slate-300 mb-2" />
+                      <p className="text-sm">No results found for "{query}"</p>
+                    </div>
+                  )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -242,7 +244,6 @@ export function TopNav() {
             </div>
           </div>
         ) : (
-          /* Skeleton Loader to prevent layout shift before mounting */
           <div className="flex flex-col items-end gap-1">
             <div className="h-4 w-24 bg-slate-100 animate-pulse rounded"></div>
             <div className="h-3 w-40 bg-slate-100 animate-pulse rounded mt-1"></div>

@@ -271,6 +271,13 @@ export default function UserManagementPage() {
                   <td className="px-6 py-4">
                     <div className="flex justify-center gap-2">
                       <button
+                        className="p-2 text-slate-400 hover:text-rose-600 bg-white border border-slate-200 hover:border-rose-200 rounded-lg transition-colors shadow-sm"
+                      >
+                        <a href={`/user-management/${user.id}`}>
+                          <Eye className="h-4 w-4" />
+                        </a>
+                      </button>
+                      <button
                         onClick={() => openEditModal(user)}
                         className="p-2 text-slate-400 hover:text-blue-600 bg-white border border-slate-200 hover:border-blue-200 rounded-lg transition-colors shadow-sm"
                       >

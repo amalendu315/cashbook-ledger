@@ -1,10 +1,8 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import StatCard from "@/components/reusable/stat-card";
 import {
-  ArrowDownToLine,
   ArrowUpFromLine,
-  Wallet,
   Building2,
   Calendar,
   FileText,
@@ -15,6 +13,7 @@ import {
   CheckCircle2,
   Landmark,
   Banknote,
+  FolderTree,
 } from "lucide-react";
 import {
   AreaChart,
@@ -26,7 +25,6 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
-import Link from "next/link";
 import { getDashboardData } from "@/app/actions/dashboard";
 
 export default function DashboardPage() {
@@ -74,10 +72,10 @@ export default function DashboardPage() {
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">
-            Property Overview
+            Cashbook Overview
           </h1>
           <p className="text-slate-500 text-sm mt-1">
-            Analytical snapshot for selected property and date.
+            Analytical snapshot for selected company and date.
           </p>
         </div>
 
@@ -89,7 +87,7 @@ export default function DashboardPage() {
               onChange={(e) => setSelectedCompanyId(e.target.value)}
               className="bg-transparent border-none outline-none text-sm font-semibold text-slate-700 w-full cursor-pointer appearance-none"
             >
-              <option value="ALL">All Properties (Consolidated)</option>
+              <option value="ALL">All Companies (Consolidated)</option>
               {companies.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
@@ -106,6 +104,12 @@ export default function DashboardPage() {
               onChange={(e) => setSelectedDate(e.target.value)}
               className="bg-transparent border-none outline-none text-sm font-semibold text-slate-700 w-full cursor-pointer"
             />
+          </div>
+          <div className="flex items-center bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 flex-1 lg:flex-none hover:border-blue-400 transition-colors">
+            <FolderTree className="h-4 w-4 text-slate-400 mr-2" />
+            <a href="/reports/group" className="bg-transparent border-none outline-none text-sm font-semibold text-slate-700 w-full cursor-pointer">
+              Group Balances
+            </a>
           </div>
         </div>
       </div>

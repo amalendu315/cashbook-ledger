@@ -248,7 +248,7 @@ export default function GroupReportPage() {
             <thead className="bg-slate-50 text-slate-500 font-bold uppercase text-xs tracking-wider border-b border-slate-200">
               <tr>
                 <th className="px-6 py-4 w-16">Sl No.</th>
-                <th className="px-6 py-4 w-1/3">Hotel Group Name</th>
+                <th className="px-6 py-4 w-1/3">Group Name</th>
                 <th className="px-6 py-4 text-right">Total In (₹)</th>
                 <th className="px-6 py-4 text-right">Total Out (₹)</th>
                 <th className="px-6 py-4 text-right">Net Balance (₹)</th>
@@ -332,7 +332,7 @@ export default function GroupReportPage() {
                               <thead className="text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-100">
                                 <tr>
                                   <th className="pb-2 w-1/3">Ledger Name</th>
-                                  <th className="pb-2 w-1/3">Property</th>
+                                  <th className="pb-2 w-1/3">Company</th>
                                   <th className="pb-2 text-right">
                                     Collection (In)
                                   </th>

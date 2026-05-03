@@ -7,8 +7,8 @@ import { AuthProvider } from "@/components/providers/session-provider";
 // Dynamic metadata configuration template for all nested dashboard pages
 export const metadata: Metadata = {
   title: {
-    template: "%s | Udaan Cashbook",
-    default: "Dashboard | Udaan Cashbook",
+    template: "%s | Enterprise Cashbook",
+    default: "Dashboard | Enterprise Cashbook",
   },
   description: "Enterprise Cashbook Dashboard and Masters Management",
 };

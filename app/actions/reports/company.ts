@@ -24,58 +24,90 @@ export async function getCompanyReportData(
       orderBy: { name: "asc" },
     });
 
-    if (!companyId || companyId === "") {
-      return {
-        companies,
-        companyName: "",
-        ledgerSummary: [],
-        transactions: [],
-        openingBalance: 0,
-        success: true,
-      };
-    }
+    const emptyResponse = {
+      companies,
+      companyName: "",
+      companyCode: "",
+      ledgerSummary: [],
+      transactions: [],
+      openingBalance: 0,
+      totalIn: 0,
+      totalOut: 0,
+      closingBalance: 0,
+      cashSummary: { opening: 0, in: 0, out: 0, closing: 0 },
+      bankSummary: { opening: 0, in: 0, out: 0, closing: 0 },
+      success: true,
+    };
+
+    if (!companyId || companyId === "") return emptyResponse;
 
     // Validate access
     if (!isAdmin && !userCompanyIds.includes(companyId)) {
       throw new Error("You do not have access to this property.");
     }
 
-    const selectedCompany = companies.find((c) => c.id === companyId);
+    const selectedCompany = await prisma.company.findUnique({
+      where: { id: companyId },
+    });
     const companyName = selectedCompany
       ? selectedCompany.name
       : "Unknown Property";
+    const companyCode = selectedCompany ? selectedCompany.companyCode : "";
 
     const fromDate = new Date(fromDateStr);
     fromDate.setHours(0, 0, 0, 0);
     const toDate = new Date(toDateStr);
     toDate.setHours(23, 59, 59, 999);
 
-    if (!prisma.transaction) {
-      throw new Error("Database syncing. Please restart your Next.js server.");
-    }
-
-    // 1. Calculate Opening Balance (All transactions strictly BEFORE fromDate)
+    // 1. Calculate Opening Balances (All transactions strictly BEFORE fromDate)
     const pastTxns = await prisma.transaction.findMany({
-      where: {
-        companyId: companyId,
-        businessDate: { lt: fromDate },
-      },
+      where: { companyId: companyId, businessDate: { lt: fromDate } },
     });
-
-    let openingBalance = 0;
-    pastTxns.forEach((t: any) => {
-      if (t.type.includes("RECEIPT")) openingBalance += t.amount;
-      else if (t.type.includes("PAYMENT") || t.type === "FUND_TRANSFER")
-        openingBalance -= t.amount;
-    });
-
     const pastTransfersIn = await prisma.transaction.findMany({
       where: {
         destinationCompanyId: companyId,
         businessDate: { lt: fromDate },
       },
+      include: {
+        createdBy: { select: { name: true } },
+        company: { select: { name: true } },
+        destinationCompany: { select: { name: true } },
+      },
     });
-    pastTransfersIn.forEach((t: any) => (openingBalance += t.amount));
+
+    let openingBalance = 0;
+    let cashOpening = 0;
+    let bankOpening = 0;
+
+    pastTxns.forEach((t: any) => {
+      const mode = (t.paymentMode || "").toLowerCase();
+      const isCash =
+        t.type.includes("CASH") ||
+        ((t.type === "FUND_TRANSFER" || t.type === "TRANSFER_IN") &&
+          mode === "cash");
+      const isBank =
+        t.type.includes("BANK") ||
+        ((t.type === "FUND_TRANSFER" || t.type === "TRANSFER_IN") &&
+          mode !== "cash");
+
+      if (t.type.includes("RECEIPT")) {
+        openingBalance += t.amount;
+        if (isCash) cashOpening += t.amount;
+        if (isBank) bankOpening += t.amount;
+      } else if (t.type.includes("PAYMENT") || t.type === "FUND_TRANSFER") {
+        openingBalance -= t.amount;
+        if (isCash) cashOpening -= t.amount;
+        if (isBank) bankOpening -= t.amount;
+      }
+    });
+
+    pastTransfersIn.forEach((t: any) => {
+      openingBalance += t.amount;
+      const mode = (t.paymentMode || "").toLowerCase();
+      const isCash = mode === "cash";
+      if (isCash) cashOpening += t.amount;
+      else bankOpening += t.amount;
+    });
 
     // 2. Fetch Transactions for the Selected Period
     const periodTxns = await prisma.transaction.findMany({
@@ -83,7 +115,11 @@ export async function getCompanyReportData(
         companyId: companyId,
         businessDate: { gte: fromDate, lte: toDate },
       },
-      include: { ledger: true, createdBy: { select: { name: true } } },
+      include: {
+        ledger: true,
+        createdBy: { select: { name: true } },
+        destinationCompany: { select: { name: true } }, // <-- ADD THIS
+      },
     });
 
     const periodTransfersIn = await prisma.transaction.findMany({
@@ -91,17 +127,45 @@ export async function getCompanyReportData(
         destinationCompanyId: companyId,
         businessDate: { gte: fromDate, lte: toDate },
       },
-      include: { createdBy: { select: { name: true } } },
+      include: {
+        createdBy: { select: { name: true } },
+        company: { select: { name: true } }, // <-- ADD THIS (The Sender)
+      },
     });
 
     // 3. Group Data by Ledger for the "Overall" Tab
     const ledgerMap = new Map<string, any>();
+    let totalIn = 0;
+    let totalOut = 0;
+    let cashIn = 0,
+      cashOut = 0;
+    let bankIn = 0,
+      bankOut = 0;
 
     periodTxns.forEach((t: any) => {
+      // --- KPI Aggregations ---
+      const mode = (t.paymentMode || "").toLowerCase();
+      const isCash =
+        t.type.includes("CASH") ||
+        (t.type === "FUND_TRANSFER" && mode === "cash");
+      const isBank =
+        t.type.includes("BANK") ||
+        (t.type === "FUND_TRANSFER" && mode !== "cash");
+
+      if (t.type.includes("RECEIPT")) {
+        totalIn += t.amount;
+        if (isCash) cashIn += t.amount;
+        if (isBank) bankIn += t.amount;
+      } else if (t.type.includes("PAYMENT") || t.type === "FUND_TRANSFER") {
+        totalOut += t.amount;
+        if (isCash) cashOut += t.amount;
+        if (isBank) bankOut += t.amount;
+      }
+
+      // --- Ledger Summaries ---
       let lId = t.ledgerId;
       let lName = t.ledger ? t.ledger.ledger_name : "";
 
-      // Explicitly categorize Fund Transfers so they aren't marked as "Unassigned"
       if (t.type === "FUND_TRANSFER") {
         lId = "TRANSFER_OUT";
         lName = "Internal Fund Transfers (Sent)";
@@ -125,17 +189,15 @@ export async function getCompanyReportData(
       const lData = ledgerMap.get(lId);
       lData.transactions += 1;
 
-      if (t.type.includes("RECEIPT")) {
-        lData.in += t.amount;
-      } else if (t.type.includes("PAYMENT") || t.type === "FUND_TRANSFER") {
+      if (t.type.includes("RECEIPT")) lData.in += t.amount;
+      else if (t.type.includes("PAYMENT") || t.type === "FUND_TRANSFER")
         lData.out += t.amount;
-      }
 
       lData.net = lData.in - lData.out;
       lData.type = lData.net >= 0 ? "Revenue" : "Expense";
     });
 
-    // Handle Incoming Transfers
+    // Handle Incoming Transfers for Summaries
     if (periodTransfersIn.length > 0) {
       ledgerMap.set("TRANSFER_IN", {
         id: "TRANSFER_IN",
@@ -147,10 +209,16 @@ export async function getCompanyReportData(
         type: "Revenue",
       });
       const lData = ledgerMap.get("TRANSFER_IN");
+
       periodTransfersIn.forEach((t: any) => {
         lData.transactions += 1;
         lData.in += t.amount;
         lData.net += t.amount;
+
+        totalIn += t.amount;
+        const mode = (t.paymentMode || "").toLowerCase();
+        if (mode === "cash") cashIn += t.amount;
+        else bankIn += t.amount;
       });
     }
 
@@ -172,8 +240,13 @@ export async function getCompanyReportData(
         }),
         particulars:
           t.type === "FUND_TRANSFER"
-            ? "Internal Fund Transfer (Sent)"
+            ? t.destinationCompany?.name
+              ? `Internal Fund Transfer (Sent to ${t.destinationCompany.name})`
+              : "Internal Fund Transfer (Sent)"
             : t.particulars || (t.ledger ? t.ledger.ledger_name : "General"),
+        ledgerName:
+          t.ledger?.ledger_name ||
+          (t.type === "FUND_TRANSFER" ? "Fund Transfer" : "N/A"),
         note: t.remarks || "-",
         amount: t.amount,
         mode:
@@ -191,7 +264,10 @@ export async function getCompanyReportData(
           hour: "2-digit",
           minute: "2-digit",
         }),
-        particulars: "Internal Fund Transfer (Received)",
+        particulars: t.company?.name
+          ? `Internal Fund Transfer (Received from ${t.company.name})`
+          : "Internal Fund Transfer (Received)",
+        ledgerName: "Fund Transfer",
         note: t.remarks || "-",
         amount: t.amount,
         mode: t.paymentMode || "Bank Transfer",
@@ -203,9 +279,25 @@ export async function getCompanyReportData(
     return {
       companies,
       companyName,
+      companyCode,
       ledgerSummary,
       transactions: formattedTransactions,
       openingBalance,
+      totalIn,
+      totalOut,
+      closingBalance: openingBalance + totalIn - totalOut,
+      cashSummary: {
+        opening: cashOpening,
+        in: cashIn,
+        out: cashOut,
+        closing: cashOpening + cashIn - cashOut,
+      },
+      bankSummary: {
+        opening: bankOpening,
+        in: bankIn,
+        out: bankOut,
+        closing: bankOpening + bankIn - bankOut,
+      },
       success: true,
     };
   } catch (error: any) {
@@ -213,9 +305,15 @@ export async function getCompanyReportData(
     return {
       companies: [],
       companyName: "",
+      companyCode: "",
       ledgerSummary: [],
       transactions: [],
       openingBalance: 0,
+      totalIn: 0,
+      totalOut: 0,
+      closingBalance: 0,
+      cashSummary: { opening: 0, in: 0, out: 0, closing: 0 },
+      bankSummary: { opening: 0, in: 0, out: 0, closing: 0 },
       success: false,
       error: error.message,
     };

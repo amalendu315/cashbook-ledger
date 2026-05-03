@@ -202,14 +202,14 @@ export default function LedgerReportPage() {
          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
            <div className="lg:col-span-1">
              <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase">
-               Property
+               Company
              </label>
              <select
                value={selectedCompanyId}
                onChange={(e) => setSelectedCompanyId(e.target.value)}
                className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
              >
-               <option value="">All Properties</option>
+               <option value="">All Companies</option>
                {companies.map((c) => (
                  <option key={c.id} value={c.id}>
                    {c.name}
@@ -299,12 +299,12 @@ export default function LedgerReportPage() {
          >
            Bank Ledger
          </button>
-         <button
+         {/* <button
            onClick={() => setActiveTab("transfer")}
            className={`px-5 py-3 text-sm font-bold rounded-t-lg transition-colors border-b-2 ${activeTab === "transfer" ? "border-blue-600 bg-white text-blue-600" : "border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50"}`}
          >
            Fund Transfers
-         </button>
+         </button> */}
        </div>
 
        {/* Print Date Range Indication */}
