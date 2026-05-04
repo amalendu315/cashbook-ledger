@@ -1,7 +1,7 @@
 import { PrismaMssql } from "@prisma/adapter-mssql";
 import { PrismaClient } from "@/generated/prisma/client";
 
-const adapter = new PrismaMssql(process.env.DATABASE_URL);
+const adapter = new PrismaMssql(process.env.PROD_DATABASE_URL);
 const prisma = new PrismaClient({ adapter });
 
 export {prisma};

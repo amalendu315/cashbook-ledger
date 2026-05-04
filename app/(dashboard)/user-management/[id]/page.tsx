@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -19,12 +19,12 @@ import {
 } from "lucide-react";
 import { getUserDetails, adminResetPassword } from "@/app/actions/master/user";
 
-export default function UserDetailsPage({
+export default async function UserDetailsPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const resolvedParams = use(params);
+  const resolvedParams = await params;
   const userId = resolvedParams.id;
   const router = useRouter();
 
