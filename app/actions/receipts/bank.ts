@@ -1,12 +1,21 @@
 "use server";
 
-import {prisma} from "@/lib/db";
+import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
+interface FilterParams {
+  companyId?: string;
+  fromDate?: string;
+  toDate?: string;
+  bookingId?: string;
+  payee?: string;
+  approver?: string;
+}
+
 // Fetch data for the Bank Receipt Grid and Form Dropdowns
-export async function getBankReceiptData() {
+export async function getBankReceiptData(filters?: FilterParams) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) throw new Error("Unauthorized access");
@@ -44,15 +53,63 @@ export async function getBankReceiptData() {
       orderBy: { ledger_name: "asc" },
     });
 
-    // 3. Fetch existing bank receipts
+    // 3. Build the dynamic WHERE clause for Transactions
+    const whereClause: any = {
+      type: "BANK_RECEIPT",
+    };
+
+    // Apply RBAC and Company Filter
+    if (isAdmin) {
+      if (filters?.companyId && filters.companyId !== "ALL") {
+        whereClause.companyId = filters.companyId;
+      }
+    } else {
+      if (filters?.companyId && filters.companyId !== "ALL") {
+        // Ensure requested company is within user's allowed companies
+        if (userCompanyIds.includes(filters.companyId)) {
+          whereClause.companyId = filters.companyId;
+        } else {
+          // Fallback to block access if they somehow pass an unauthorized ID
+          whereClause.companyId = "UNAUTHORIZED_ACCESS";
+        }
+      } else {
+        // If "ALL" is selected, restrict to only their allowed companies
+        whereClause.companyId = { in: userCompanyIds };
+      }
+    }
+
+    // Apply remaining filters if they exist
+    if (filters) {
+      // Date Range Filtering
+      if (filters.fromDate && filters.toDate) {
+        whereClause.businessDate = {
+          gte: new Date(filters.fromDate),
+          lte: new Date(filters.toDate),
+        };
+      } else if (filters.fromDate) {
+        whereClause.businessDate = { gte: new Date(filters.fromDate) };
+      } else if (filters.toDate) {
+        whereClause.businessDate = { lte: new Date(filters.toDate) };
+      }
+
+      // Text searches (case-insensitive in most SQL dialects)
+      if (filters.bookingId) {
+        whereClause.voucherNo = { contains: filters.bookingId };
+      }
+      if (filters.payee) {
+        whereClause.particulars = { contains: filters.payee };
+      }
+      if (filters.approver) {
+        whereClause.approvedBy = { contains: filters.approver };
+      }
+    }
+
+    // 4. Fetch existing bank receipts using the dynamic clause
     let formattedTransactions: any[] = [];
 
     if (prisma.transaction) {
       const transactions = await prisma.transaction.findMany({
-        where: {
-          type: "BANK_RECEIPT",
-          ...(isAdmin ? {} : { companyId: { in: userCompanyIds } }),
-        },
+        where: whereClause,
         include: {
           company: { select: { name: true } },
           ledger: { select: { ledger_name: true } },

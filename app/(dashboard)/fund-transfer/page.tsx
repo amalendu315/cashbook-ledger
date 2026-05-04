@@ -11,7 +11,10 @@ import {
 } from "lucide-react";
 import { PageHeader } from "@/components/reusable/page-header";
 import { DataTableShell } from "@/components/reusable/data-table-shell";
-import { TransactionFilterBox } from "@/components/reusable/transaction-filter";
+import {
+  TransactionFilterBox,
+  TransactionFilters,
+} from "@/components/reusable/transaction-filter";
 import {
   getFundTransferData,
   saveFundTransfer,
@@ -22,6 +25,9 @@ export default function FundTransferPage() {
  const [isModalOpen, setIsModalOpen] = useState(false);
  const [isLoading, setIsLoading] = useState(true);
  const [isSaving, setIsSaving] = useState(false);
+ const [activeFilters, setActiveFilters] = useState<TransactionFilters | null>(
+   null,
+ );
 
  // Data State
  const [transfers, setTransfers] = useState<any[]>([]);
@@ -44,19 +50,26 @@ export default function FundTransferPage() {
    fetchData();
  }, []);
 
- const fetchData = async () => {
+ const fetchData = async (filters: TransactionFilters | null = null) => {
    setIsLoading(true);
-   const data = await getFundTransferData();
+   const data = await getFundTransferData(filters || undefined);
+
    if (data.success) {
      setTransfers(data.transactions);
      setUserCompanies(data.userCompanies);
      setAllCompanies(data.allCompanies);
 
      // Set default source hotel
-     if (data.userCompanies.length > 0)
+     if (data.userCompanies.length > 0 && !editingId)
        setFormData((f) => ({ ...f, companyId: data.userCompanies[0].id }));
    }
    setIsLoading(false);
+ };
+
+ // <-- New handler for the Search button
+ const handleSearch = (filters: TransactionFilters) => {
+   setActiveFilters(filters); // Save current filters
+   fetchData(filters); // Fetch filtered data
  };
 
  const handleInputChange = (
@@ -161,7 +174,7 @@ export default function FundTransferPage() {
      />
 
      {/* Fund Transfer doesn't need Payee or Booking ID filtering usually, just dates and source hotel */}
-     <TransactionFilterBox showHotel={true} />
+     <TransactionFilterBox showHotel={true} onSearch={handleSearch} />
 
      <div className="flex justify-end px-6 mb-2 -mt-2">
        <div className="bg-white border border-slate-200 rounded-lg px-4 py-2 shadow-sm flex items-center gap-3">
@@ -304,7 +317,7 @@ export default function FundTransferPage() {
                {/* Routing Logic */}
                <div className="p-4 rounded-xl border border-rose-200 bg-rose-50/50">
                  <label className="block text-sm font-bold text-rose-800 mb-2">
-                   From Hotel (Source) <span className="text-rose-500">*</span>
+                   From Company (Source) <span className="text-rose-500">*</span>
                  </label>
                  <select
                    name="companyId"
@@ -312,7 +325,7 @@ export default function FundTransferPage() {
                    onChange={handleInputChange}
                    className="w-full px-4 py-2.5 bg-white border border-rose-200 rounded-xl focus:ring-2 focus:ring-rose-500 font-semibold outline-none text-rose-900"
                  >
-                   <option value="">--- Select Source Hotel ---</option>
+                   <option value="">--- Select Source Company ---</option>
                    {userCompanies.map((c) => (
                      <option key={c.id} value={c.id}>
                        {c.name}
@@ -323,7 +336,7 @@ export default function FundTransferPage() {
 
                <div className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/50">
                  <label className="block text-sm font-bold text-emerald-800 mb-2">
-                   To Hotel (Destination){" "}
+                   To Company (Destination){" "}
                    <span className="text-rose-500">*</span>
                  </label>
                  <select
@@ -332,7 +345,7 @@ export default function FundTransferPage() {
                    onChange={handleInputChange}
                    className="w-full px-4 py-2.5 bg-white border border-emerald-200 rounded-xl focus:ring-2 focus:ring-emerald-500 font-semibold outline-none text-emerald-900"
                  >
-                   <option value="">--- Select Dest Hotel ---</option>
+                   <option value="">--- Select Dest Company ---</option>
                    {allCompanies.map((c) => (
                      <option key={c.id} value={c.id}>
                        {c.name}

@@ -5,8 +5,16 @@ import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
-// Fetch data for the Cash Payment Grid and Form Dropdowns
-export async function getCashPaymentData() {
+interface FilterParams {
+  companyId?: string;
+  fromDate?: string;
+  toDate?: string;
+  bookingId?: string;
+  payee?: string;
+  approver?: string;
+}
+
+export async function getCashPaymentData(filters?: FilterParams) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) throw new Error("Unauthorized access");
@@ -29,14 +37,12 @@ export async function getCashPaymentData() {
         ...(isAdmin
           ? {}
           : {
-              // If not admin, ledger must be Global (0 mappings) OR mapped to one of the user's companies
               OR: [
                 { companies: { none: {} } },
                 { companies: { some: { companyId: { in: userCompanyIds } } } },
               ],
             }),
       },
-      // IMPORTANT: Include mapped companies so the frontend can filter dynamically
       select: {
         id: true,
         ledger_name: true,
@@ -45,16 +51,62 @@ export async function getCashPaymentData() {
       orderBy: { ledger_name: "asc" },
     });
 
-    // 3. Fetch existing cash payments (Safely checking if model exists yet)
+    // 3. Build the dynamic WHERE clause for Transactions
+    const whereClause: any = {
+      type: "CASH_PAYMENT",
+    };
+
+    // Apply RBAC and Company Filter
+    if (isAdmin) {
+      if (filters?.companyId && filters.companyId !== "ALL") {
+        whereClause.companyId = filters.companyId;
+      }
+    } else {
+      if (filters?.companyId && filters.companyId !== "ALL") {
+        // Ensure requested company is within user's allowed companies
+        if (userCompanyIds.includes(filters.companyId)) {
+          whereClause.companyId = filters.companyId;
+        } else {
+          whereClause.companyId = "UNAUTHORIZED_ACCESS"; // Block access
+        }
+      } else {
+        // Restrict to only their allowed companies
+        whereClause.companyId = { in: userCompanyIds };
+      }
+    }
+
+    // Apply remaining filters if they exist
+    if (filters) {
+      // Date Range Filtering
+      if (filters.fromDate && filters.toDate) {
+        whereClause.businessDate = {
+          gte: new Date(filters.fromDate),
+          lte: new Date(filters.toDate),
+        };
+      } else if (filters.fromDate) {
+        whereClause.businessDate = { gte: new Date(filters.fromDate) };
+      } else if (filters.toDate) {
+        whereClause.businessDate = { lte: new Date(filters.toDate) };
+      }
+
+      // Text searches
+      if (filters.bookingId) {
+        whereClause.voucherNo = { contains: filters.bookingId };
+      }
+      if (filters.payee) {
+        whereClause.particulars = { contains: filters.payee };
+      }
+      if (filters.approver) {
+        whereClause.approvedBy = { contains: filters.approver };
+      }
+    }
+
+    // 4. Fetch existing cash payments using the dynamic clause
     let formattedTransactions: any[] = [];
 
     if (prisma.transaction) {
       const transactions = await prisma.transaction.findMany({
-        where: {
-          type: "CASH_PAYMENT",
-          // Only pull transactions for properties the user has access to
-          ...(isAdmin ? {} : { companyId: { in: userCompanyIds } }),
-        },
+        where: whereClause,
         include: {
           company: { select: { name: true } },
           ledger: { select: { ledger_name: true } },
@@ -63,35 +115,35 @@ export async function getCashPaymentData() {
         orderBy: { businessDate: "desc" },
       });
 
-      // Format for the frontend grid
-      formattedTransactions = transactions.map((t: any) => ({
+      formattedTransactions = transactions.map((t) => ({
         id: t.id,
         voucherNo: t.voucherNo,
-        hotel: t.company?.name || "Unknown",
         hotelId: t.companyId,
-        payee: t.particulars,
-        amount: t.amount,
-        bDate: t.businessDate.toISOString().split("T")[0],
-        account: t.ledger?.ledger_name || "Uncategorized",
+        hotel: t.company?.name || "Unknown",
         ledgerId: t.ledgerId,
+        account: t.ledger?.ledger_name || "N/A",
+        amount: t.amount,
+        mode: t.paymentMode,
+        bDate: t.businessDate.toISOString().split("T")[0],
         note: t.remarks || "-",
         user: t.createdBy?.name || "System",
+        payee: t.particulars,
       }));
     }
 
     return {
+      success: true,
       transactions: formattedTransactions,
       companies,
       ledgers,
-      success: true,
     };
   } catch (error: any) {
     console.error("Error fetching cash payments:", error);
     return {
+      success: false,
       transactions: [],
       companies: [],
       ledgers: [],
-      success: false,
       error: error.message,
     };
   }

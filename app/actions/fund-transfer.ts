@@ -1,3 +1,4 @@
+// app/actions/fund-transfer.ts
 "use server";
 
 import { prisma } from "@/lib/db";
@@ -5,8 +6,17 @@ import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
+interface FilterParams {
+  companyId?: string;
+  fromDate?: string;
+  toDate?: string;
+  bookingId?: string;
+  payee?: string;
+  approver?: string;
+}
+
 // Fetch data for the Fund Transfer Grid and Form Dropdowns
-export async function getFundTransferData() {
+export async function getFundTransferData(filters?: FilterParams) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) throw new Error("Unauthorized access");
@@ -28,23 +38,58 @@ export async function getFundTransferData() {
       orderBy: { name: "asc" },
     });
 
-    // 3. Fetch existing Fund Transfers
+    // 3. Build the dynamic WHERE clause for Transactions
+    const whereClause: any = {
+      type: "FUND_TRANSFER",
+    };
+
+    // Apply RBAC and Company Filter
+    if (filters?.companyId && filters.companyId !== "ALL") {
+      if (!isAdmin && !userCompanyIds.includes(filters.companyId)) {
+        whereClause.companyId = "UNAUTHORIZED_ACCESS"; // Block unauthorized lookups
+      } else {
+        // Show transfers where the selected company is EITHER the source OR destination
+        whereClause.OR = [
+          { companyId: filters.companyId },
+          { destinationCompanyId: filters.companyId },
+        ];
+      }
+    } else if (!isAdmin) {
+      // If "ALL" is selected but user is not admin, restrict to their authorized properties
+      whereClause.OR = [
+        { companyId: { in: userCompanyIds } },
+        { destinationCompanyId: { in: userCompanyIds } },
+      ];
+    }
+
+    // Apply remaining filters if they exist
+    if (filters) {
+      // Date Range Filtering
+      if (filters.fromDate && filters.toDate) {
+        whereClause.businessDate = {
+          gte: new Date(filters.fromDate),
+          lte: new Date(filters.toDate),
+        };
+      } else if (filters.fromDate) {
+        whereClause.businessDate = { gte: new Date(filters.fromDate) };
+      } else if (filters.toDate) {
+        whereClause.businessDate = { lte: new Date(filters.toDate) };
+      }
+
+      if (filters.bookingId) {
+        whereClause.voucherNo = { contains: filters.bookingId };
+      }
+      if (filters.approver) {
+        whereClause.approvedBy = { contains: filters.approver };
+      }
+    }
+
+    // 4. Fetch existing Fund Transfers
     let formattedTransactions: any[] = [];
 
     if (prisma.transaction) {
       const transactions = await prisma.transaction.findMany({
-        where: {
-          type: "FUND_TRANSFER",
-          // Show transfers where the user's company is either the source OR the destination
-          ...(isAdmin
-            ? {}
-            : {
-                OR: [
-                  { companyId: { in: userCompanyIds } },
-                  { destinationCompanyId: { in: userCompanyIds } },
-                ],
-              }),
-        },
+        where: whereClause,
         include: {
           company: { select: { name: true } },
           destinationCompany: { select: { name: true } },
@@ -120,14 +165,13 @@ export async function saveFundTransfer(payload: any) {
       });
     } else {
       // CREATE
-      // Generate a unique voucher number for Fund Transfers (e.g., FT-849302)
       const voucherNo = `FT-${Math.floor(100000 + Math.random() * 900000)}`;
 
       await prisma.transaction.create({
         data: {
           voucherNo,
           type: "FUND_TRANSFER",
-          paymentMode: payload.paymentMode || "Bank Transfer", // Assign chosen mode
+          paymentMode: payload.paymentMode || "Bank Transfer",
           companyId: payload.companyId,
           destinationCompanyId: payload.destinationCompanyId,
           amount: amountFloat,

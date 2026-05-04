@@ -11,7 +11,10 @@ import {
 } from "lucide-react";
 import { PageHeader } from "@/components/reusable/page-header";
 import { DataTableShell } from "@/components/reusable/data-table-shell";
-import { TransactionFilterBox } from "@/components/reusable/transaction-filter";
+import {
+  TransactionFilterBox,
+  TransactionFilters,
+} from "@/components/reusable/transaction-filter";
 import {
   getBankReceiptData,
   saveBankReceipt,
@@ -22,6 +25,9 @@ export default function BankReceiptPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [activeFilters, setActiveFilters] = useState<TransactionFilters | null>(
+    null,
+  );
 
   // Data State
   const [receipts, setReceipts] = useState<any[]>([]);
@@ -44,19 +50,26 @@ export default function BankReceiptPage() {
     fetchData();
   }, []);
 
-  const fetchData = async () => {
+  const fetchData = async (filters: TransactionFilters | null = null) => {
     setIsLoading(true);
-    const data = await getBankReceiptData();
+    const data = await getBankReceiptData(filters || undefined);
+
     if (data.success) {
       setReceipts(data.transactions);
       setCompanies(data.companies);
       setLedgers(data.ledgers);
 
-      // Set defaults for form if data exists
-      if (data.companies.length > 0)
+      // Set defaults for form if data exists and we aren't editing
+      if (data.companies.length > 0 && !editingId)
         setFormData((f) => ({ ...f, companyId: data.companies[0].id }));
     }
     setIsLoading(false);
+  };
+
+  // <-- New handler for the Search button
+  const handleSearch = (filters: TransactionFilters) => {
+    setActiveFilters(filters); // Save current filters
+    fetchData(filters); // Fetch filtered data
   };
 
   // Derived state: Filter ledgers dynamically based on selected Company
@@ -67,37 +80,37 @@ export default function BankReceiptPage() {
     return l.companies.some((c: any) => c.companyId === formData.companyId);
   });
 
-  const handleInputChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-    >,
-  ) => {
-    const { name, value } = e.target;
+ const handleInputChange = (
+   e: React.ChangeEvent<
+     HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+   >,
+ ) => {
+   const { name, value } = e.target;
 
-    setFormData((prev) => {
-      const newData = { ...prev, [name]: value };
+   setFormData((prev) => {
+     const newData = { ...prev, [name]: value };
 
-      // If the user changes the Company, we must validate the currently selected Ledger
-      if (name === "companyId") {
-        const newValidLedgers = ledgers.filter((l) => {
-          if (!l.companies || l.companies.length === 0) return true;
-          return l.companies.some((c: any) => c.companyId === value);
-        });
+     // If the user changes the Company, we must validate the currently selected Ledger
+     if (name === "companyId") {
+       const newValidLedgers = ledgers.filter((l) => {
+         if (!l.companies || l.companies.length === 0) return true;
+         return l.companies.some((c: any) => c.companyId === value);
+       });
 
-        // If the old ledger is not allowed for the new company, clear the ledger selection
-        if (!newValidLedgers.some((l) => l.id === prev.ledgerId)) {
-          newData.ledgerId = "";
-        }
-      }
+       // If the old ledger is not allowed for the new company, clear the ledger selection
+       if (!newValidLedgers.some((l) => l.id === prev.ledgerId)) {
+         newData.ledgerId = "";
+       }
+     }
 
-      return newData;
-    });
-  };
+     return newData;
+   });
+ };
 
   const openNewModal = () => {
     setEditingId(null);
     setFormData({
-      companyId: companies.length > 0 ? companies[0].id : "",
+      companyId:"",
       amount: "",
       paymentMode: "UPI",
       businessDate: new Date().toISOString().split("T")[0],
@@ -142,7 +155,7 @@ export default function BankReceiptPage() {
     });
 
     if (result.success) {
-      await fetchData();
+      await fetchData(activeFilters); // <-- Re-fetch using current filters to preserve view
       setIsModalOpen(false);
     } else {
       alert("Error saving transaction: " + result.error);
@@ -187,7 +200,7 @@ export default function BankReceiptPage() {
         }
       />
 
-      <TransactionFilterBox showPayee={true} />
+      <TransactionFilterBox showPayee={true} onSearch={handleSearch} />
 
       <div className="flex justify-end px-6 mb-2 -mt-2">
         <div className="bg-white border border-slate-200 rounded-lg px-4 py-2 shadow-sm flex items-center gap-3">
@@ -328,7 +341,7 @@ export default function BankReceiptPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="md:col-span-2">
                   <label className="block text-sm font-bold text-slate-700 mb-2">
-                    Hotel <span className="text-rose-500">*</span>
+                    Company <span className="text-rose-500">*</span>
                   </label>
                   <select
                     name="companyId"
@@ -336,8 +349,8 @@ export default function BankReceiptPage() {
                     onChange={handleInputChange}
                     className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-cyan-500 font-semibold outline-none cursor-pointer"
                   >
-                    <option value="" disabled>
-                      --- Select Hotel ---
+                    <option value="">
+                      --- Select Company ---
                     </option>
                     {companies.map((c) => (
                       <option key={c.id} value={c.id}>
@@ -362,7 +375,7 @@ export default function BankReceiptPage() {
                     <option value="" disabled>
                       {formData.companyId
                         ? "--- Select Ledger ---"
-                        : "--- Select Hotel First ---"}
+                        : "--- Select Company First ---"}
                     </option>
                     {availableLedgers.map((l) => (
                       <option key={l.id} value={l.id}>

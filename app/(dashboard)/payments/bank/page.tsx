@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { PageHeader } from "@/components/reusable/page-header";
 import { DataTableShell } from "@/components/reusable/data-table-shell";
-import { TransactionFilterBox } from "@/components/reusable/transaction-filter";
+import { TransactionFilterBox, TransactionFilters } from "@/components/reusable/transaction-filter";
 import {
   getBankPaymentData,
   saveBankPayment,
@@ -26,6 +26,9 @@ export default function BankPaymentPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [activeFilters, setActiveFilters] = useState<TransactionFilters | null>(
+    null,
+  ); // <-- Add this
 
   // Data State
   const [payments, setPayments] = useState<any[]>([]);
@@ -48,19 +51,27 @@ export default function BankPaymentPage() {
     fetchData();
   }, []);
 
-  const fetchData = async () => {
+  const fetchData = async (filters: TransactionFilters | null = null) => {
     setIsLoading(true);
-    const data = await getBankPaymentData();
-    if (data.success) {
-      setPayments(data.transactions);
-      setCompanies(data.companies);
-      setLedgers(data.ledgers);
+    // Pass the filters down to the server action
+    const data = await getBankPaymentData(filters || undefined);
 
-      // Set defaults for form if data exists
-      if (data.companies.length > 0)
-        setFormData((f) => ({ ...f, companyId: data.companies[0].id }));
+    if (data.success) {
+      setPayments(data.transactions || []);
+      setCompanies(data.companies || []);
+      setLedgers(data.ledgers || []);
+
+      if (data.companies!.length > 0 && !editingId) {
+        setFormData((f) => ({ ...f, companyId: data.companies![0].id }));
+      }
     }
     setIsLoading(false);
+  };
+
+  // Add this new function to handle the search click
+  const handleSearch = (filters: TransactionFilters) => {
+    setActiveFilters(filters); // Save them in case you need them later (like for export)
+    fetchData(filters); // Fetch the new filtered data
   };
 
   // Derived state: Filter ledgers dynamically based on selected Company
@@ -101,7 +112,7 @@ export default function BankPaymentPage() {
   const openNewModal = () => {
     setEditingId(null);
     setFormData({
-      companyId: companies.length > 0 ? companies[0].id : "",
+      companyId:"",
       amount: "",
       paymentMode: "Bank Transfer",
       businessDate: new Date().toISOString().split("T")[0],
@@ -191,7 +202,7 @@ export default function BankPaymentPage() {
         }
       />
 
-      <TransactionFilterBox showPayee={true} />
+      <TransactionFilterBox showPayee={true} onSearch={handleSearch} />
 
       <div className="flex justify-end px-6 mb-2 -mt-2">
         <div className="bg-white border border-slate-200 rounded-lg px-4 py-2 shadow-sm flex items-center gap-3">
@@ -332,7 +343,7 @@ export default function BankPaymentPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="md:col-span-2">
                   <label className="block text-sm font-bold text-slate-700 mb-2">
-                    Hotel <span className="text-rose-500">*</span>
+                    Company <span className="text-rose-500">*</span>
                   </label>
                   <select
                     name="companyId"
@@ -341,7 +352,7 @@ export default function BankPaymentPage() {
                     className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 font-semibold outline-none cursor-pointer"
                   >
                     <option value="" disabled>
-                      --- Select Hotel ---
+                      --- Select Company ---
                     </option>
                     {companies.map((c) => (
                       <option key={c.id} value={c.id}>
@@ -363,10 +374,10 @@ export default function BankPaymentPage() {
                     className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 font-semibold outline-none cursor-pointer disabled:bg-slate-50 disabled:cursor-not-allowed"
                     disabled={!formData.companyId}
                   >
-                    <option value="" disabled>
+                    <option value="">
                       {formData.companyId
                         ? "--- Select Ledger ---"
-                        : "--- Select Hotel First ---"}
+                        : "--- Select Company First ---"}
                     </option>
                     {availableLedgers.map((l) => (
                       <option key={l.id} value={l.id}>

@@ -10,13 +10,16 @@ import {
 } from "lucide-react";
 import { PageHeader } from "@/components/reusable/page-header";
 import { DataTableShell } from "@/components/reusable/data-table-shell";
-import { TransactionFilterBox } from "@/components/reusable/transaction-filter";
+import { TransactionFilterBox, TransactionFilters } from "@/components/reusable/transaction-filter";
 import { getCashPaymentData, saveCashPayment, deleteTransaction } from "@/app/actions/payments/cash";
 
 export default function CashPaymentPage() {
 const [isModalOpen, setIsModalOpen] = useState(false);
 const [isLoading, setIsLoading] = useState(true);
 const [isSaving, setIsSaving] = useState(false);
+const [activeFilters, setActiveFilters] = useState<TransactionFilters | null>(
+  null,
+);
 
 // Data State
 const [payments, setPayments] = useState<any[]>([]);
@@ -38,27 +41,30 @@ useEffect(() => {
   fetchData();
 }, []);
 
-const fetchData = async () => {
+const fetchData = async (filters: TransactionFilters | null = null) => {
   setIsLoading(true);
-  const data = await getCashPaymentData();
-  console.log("Fetched Cash Payment Data:", data);
-  if (data.success) {
-    setPayments(data.transactions);
-    setCompanies(data.companies);
-    setLedgers(data.ledgers);
+  const data = await getCashPaymentData(filters || undefined);
 
-    // Set defaults for form if data exists
-    if (data.companies.length > 0)
-      setFormData((f) => ({ ...f, companyId: data.companies[0].id }));
+  if (data.success) {
+    setPayments(data.transactions || []);
+    setCompanies(data.companies || []);
+    setLedgers(data.ledgers || []);
+
+    // Set defaults for form if data exists and we aren't editing
+    if (data.companies!.length > 0 && !editingId)
+      setFormData((f) => ({ ...f, companyId: data.companies![0].id }));
   }
   setIsLoading(false);
 };
 
+const handleSearch = (filters: TransactionFilters) => {
+  setActiveFilters(filters); // Save current filters
+  fetchData(filters); // Fetch filtered data
+};
+
 // Derived state: Filter ledgers dynamically based on selected Company
 const availableLedgers = ledgers.filter((l) => {
-  // If the ledger has no mapped companies, it's globally available
   if (!l.companies || l.companies.length === 0) return true;
-  // Otherwise, check if it's explicitly assigned to the selected company
   return l.companies.some((c: any) => c.companyId === formData.companyId);
 });
 
@@ -92,7 +98,7 @@ const handleInputChange = (
 const openNewModal = () => {
   setEditingId(null);
   setFormData({
-    companyId: companies.length > 0 ? companies[0].id : "",
+    companyId:"",
     amount: "",
     businessDate: new Date().toISOString().split("T")[0],
     ledgerId: "",
@@ -180,7 +186,7 @@ return (
       }
     />
 
-    <TransactionFilterBox showPayee={true} />
+    <TransactionFilterBox showPayee={true} onSearch={handleSearch} />
 
     <div className="flex justify-end px-6 mb-2 -mt-2">
       <div className="bg-white border border-slate-200 rounded-lg px-4 py-2 shadow-sm flex items-center gap-3">
@@ -315,7 +321,7 @@ return (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div className="md:col-span-2">
                 <label className="block text-sm font-bold text-slate-700 mb-2">
-                  Hotel <span className="text-rose-500">*</span>
+                  Company <span className="text-rose-500">*</span>
                 </label>
                 <select
                   name="companyId"
@@ -323,8 +329,8 @@ return (
                   onChange={handleInputChange}
                   className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-rose-500 font-semibold outline-none cursor-pointer"
                 >
-                  <option value="" disabled>
-                    --- Select Hotel ---
+                  <option value="">
+                    --- Select Company ---
                   </option>
                   {companies.map((c) => (
                     <option key={c.id} value={c.id}>
@@ -349,7 +355,7 @@ return (
                   <option value="" disabled>
                     {formData.companyId
                       ? "--- Select Ledger ---"
-                      : "--- Select Hotel First ---"}
+                      : "--- Select Company First ---"}
                   </option>
                   {availableLedgers.map((l) => (
                     <option key={l.id} value={l.id}>
