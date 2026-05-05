@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import StatCard from "@/components/reusable/stat-card";
 import {
   ArrowUpFromLine,
+  ArrowDownToLine,
   Building2,
   Calendar,
   FileText,
@@ -11,9 +12,9 @@ import {
   AlertCircle,
   Clock,
   CheckCircle2,
-  Landmark,
-  Banknote,
+  Wallet,
   FolderTree,
+  Vault,
 } from "lucide-react";
 import {
   AreaChart,
@@ -39,10 +40,10 @@ export default function DashboardPage() {
   // Data States
   const [companies, setCompanies] = useState<any[]>([]);
   const [kpis, setKpis] = useState({
+    openingBalance: 0,
     cashIn: 0,
     cashOut: 0,
-    bankIn: 0,
-    bankOut: 0,
+    closingBalance: 0,
   });
   const [chartData, setChartData] = useState<any[]>([]);
   const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
@@ -58,7 +59,14 @@ export default function DashboardPage() {
 
     if (data.success) {
       setCompanies(data.companies || []);
-      setKpis(data.kpis || { cashIn: 0, cashOut: 0, bankIn: 0, bankOut: 0 });
+      setKpis(
+        data.kpis || {
+          openingBalance: 0,
+          cashIn: 0,
+          cashOut: 0,
+          closingBalance: 0,
+        },
+      );
       setChartData(data.chartData || []);
       setRecentTransactions(data.recentTransactions || []);
       setSystemAlerts(data.alerts || []);
@@ -75,7 +83,7 @@ export default function DashboardPage() {
             Cashbook Overview
           </h1>
           <p className="text-slate-500 text-sm mt-1">
-            Analytical snapshot for selected company and date.
+            Analytical snapshot for selected company and date (Cash Only).
           </p>
         </div>
 
@@ -107,46 +115,49 @@ export default function DashboardPage() {
           </div>
           <div className="flex items-center bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 flex-1 lg:flex-none hover:border-blue-400 transition-colors">
             <FolderTree className="h-4 w-4 text-slate-400 mr-2" />
-            <a href="/reports/group" className="bg-transparent border-none outline-none text-sm font-semibold text-slate-700 w-full cursor-pointer">
+            <a
+              href="/reports/group"
+              className="bg-transparent border-none outline-none text-sm font-semibold text-slate-700 w-full cursor-pointer"
+            >
               Group Balances
             </a>
           </div>
         </div>
       </div>
 
-      {/* Dynamic KPI Cards - Mode Specific */}
+      {/* Dynamic KPI Cards - Cash Only Mode */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
-          title="Cash Receipts (In)"
-          value={`₹ ${kpis.cashIn.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`}
-          icon={Banknote}
-          colorClass="bg-emerald-500"
-          trend={isLoading ? "Loading..." : "Physical Cash"}
-          trendLabel="collected"
+          title="Opening Balance"
+          value={`₹ ${kpis.openingBalance.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`}
+          icon={Wallet}
+          colorClass="bg-blue-500"
+          trend={isLoading ? "Loading..." : "Carried forward"}
+          trendLabel=""
         />
         <StatCard
-          title="Cash Payments (Out)"
+          title="Cash In"
+          value={`₹ ${kpis.cashIn.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`}
+          icon={ArrowDownToLine}
+          colorClass="bg-emerald-500"
+          trend={isLoading ? "Loading..." : "Cash"}
+          trendLabel="received today"
+        />
+        <StatCard
+          title="Cash Out"
           value={`₹ ${kpis.cashOut.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`}
           icon={ArrowUpFromLine}
           colorClass="bg-rose-500"
-          trend={isLoading ? "Loading..." : "Physical Cash"}
-          trendLabel="disbursed"
+          trend={isLoading ? "Loading..." : "Cash"}
+          trendLabel="paid today"
         />
         <StatCard
-          title="Bank Receipts (In)"
-          value={`₹ ${kpis.bankIn.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`}
-          icon={Landmark}
-          colorClass="bg-cyan-500"
-          trend={isLoading ? "Loading..." : "Digital transfers"}
-          trendLabel="received"
-        />
-        <StatCard
-          title="Bank Payments (Out)"
-          value={`₹ ${kpis.bankOut.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`}
-          icon={ArrowUpFromLine}
-          colorClass="bg-purple-500"
-          trend={isLoading ? "Loading..." : "Digital transfers"}
-          trendLabel="paid"
+          title="Closing Balance"
+          value={`₹ ${kpis.closingBalance.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`}
+          icon={Vault}
+          colorClass="bg-indigo-500"
+          trend={isLoading ? "Loading..." : "Available Cash"}
+          trendLabel=""
         />
       </div>
 
@@ -159,7 +170,7 @@ export default function DashboardPage() {
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
                 <TrendingUp className="h-5 w-5 text-blue-500" /> Hourly Cash
-                Flow (Selected Date)
+                Movement (Selected Date)
               </h2>
             </div>
 
@@ -239,7 +250,7 @@ export default function DashboardPage() {
                     />
                     <Area
                       type="monotone"
-                      dataKey="Inflow"
+                      dataKey="Cash In"
                       stroke="#10b981"
                       strokeWidth={3}
                       fillOpacity={1}
@@ -247,7 +258,7 @@ export default function DashboardPage() {
                     />
                     <Area
                       type="monotone"
-                      dataKey="Outflow"
+                      dataKey="Cash Out"
                       stroke="#f43f5e"
                       strokeWidth={3}
                       fillOpacity={1}
@@ -263,7 +274,7 @@ export default function DashboardPage() {
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             <div className="p-5 border-b border-slate-200 flex justify-between items-center bg-slate-50/50">
               <h2 className="text-lg font-bold text-slate-900">
-                Recent Ledger Activity
+                Recent Cash Activity
               </h2>
               <a
                 href="/reports/ledger"
@@ -278,8 +289,8 @@ export default function DashboardPage() {
                   <tr>
                     <th className="px-5 py-4">Ref & Type</th>
                     <th className="px-5 py-4">Details</th>
-                    <th className="px-5 py-4 text-right">Amount In (₹)</th>
-                    <th className="px-5 py-4 text-right">Amount Out (₹)</th>
+                    <th className="px-5 py-4 text-right">Cash In (₹)</th>
+                    <th className="px-5 py-4 text-right">Cash Out (₹)</th>
                     <th className="px-5 py-4 text-center">Action</th>
                   </tr>
                 </thead>
@@ -299,7 +310,7 @@ export default function DashboardPage() {
                         colSpan={5}
                         className="text-center py-6 text-slate-400"
                       >
-                        No recent transactions found.
+                        No recent cash transactions found.
                       </td>
                     </tr>
                   ) : (
