@@ -39,22 +39,66 @@ export async function getDashboardData(dateStr: string, companyIdStr: string) {
           : { destinationCompanyId: { in: userCompanyIds } }
         : { destinationCompanyId: companyIdStr };
 
-    // 3. Fetch Transactions (Outgoing and General)
-    const outgoingTransactions = await prisma.transaction.findMany({
+    // STRICT CASH CONDITIONS: Only include Cash Receipts, Cash Payments, and Cash Fund Transfers
+    const cashCondition = {
+      OR: [
+        { type: { in: ["CASH_RECEIPT", "CASH_PAYMENT"] } },
+        { type: "FUND_TRANSFER", paymentMode: "Cash" },
+      ],
+    };
+
+    // 3. CALCULATE OPENING BALANCE (Historical Cash Transactions prior to startOfDay)
+    const pastOutgoingGrouped = await prisma.transaction.groupBy({
+      by: ["type"],
+      where: {
+        businessDate: { lt: startOfDay },
+        ...companyFilter,
+        ...cashCondition,
+      },
+      _sum: { amount: true },
+    });
+
+    let pastCashIn = 0;
+    let pastCashOut = 0;
+
+    pastOutgoingGrouped.forEach((g) => {
+      if (g.type === "CASH_RECEIPT") pastCashIn += g._sum.amount || 0;
+      if (g.type === "CASH_PAYMENT") pastCashOut += g._sum.amount || 0;
+      if (g.type === "FUND_TRANSFER") pastCashOut += g._sum.amount || 0;
+    });
+
+    if (Object.keys(destinationFilter).length > 0 || isAdmin) {
+      const pastIncomingTransfers = await prisma.transaction.aggregate({
+        where: {
+          businessDate: { lt: startOfDay },
+          type: "FUND_TRANSFER",
+          paymentMode: "Cash",
+          ...destinationFilter,
+        },
+        _sum: { amount: true },
+      });
+      pastCashIn += pastIncomingTransfers._sum.amount || 0;
+    }
+
+    const openingBalance = pastCashIn - pastCashOut;
+
+    // 4. FETCH TODAY'S CASH TRANSACTIONS
+    const todayOutgoing = await prisma.transaction.findMany({
       where: {
         businessDate: { gte: startOfDay, lte: endOfDay },
         ...companyFilter,
+        ...cashCondition,
       },
       include: { ledger: true, company: true, destinationCompany: true },
     });
 
-    // 3b. Fetch Incoming Fund Transfers
-    let incomingTransfers: any[] = [];
+    let todayIncomingTransfers: any[] = [];
     if (Object.keys(destinationFilter).length > 0 || isAdmin) {
-      incomingTransfers = await prisma.transaction.findMany({
+      todayIncomingTransfers = await prisma.transaction.findMany({
         where: {
           businessDate: { gte: startOfDay, lte: endOfDay },
           type: "FUND_TRANSFER",
+          paymentMode: "Cash",
           ...destinationFilter,
         },
         include: { ledger: true, company: true, destinationCompany: true },
@@ -62,48 +106,37 @@ export async function getDashboardData(dateStr: string, companyIdStr: string) {
     }
 
     const uniqueTxns = new Map();
+    let cashIn = 0;
+    let cashOut = 0;
 
-    // 4. Calculate KPIs (Cash vs Bank) taking Transfer Modes into account
-    let cashIn = 0,
-      cashOut = 0,
-      bankIn = 0,
-      bankOut = 0;
-
-    outgoingTransactions.forEach((t) => {
+    // Process outgoing/internal cash transactions
+    todayOutgoing.forEach((t) => {
       uniqueTxns.set(t.id, t);
       if (t.type === "CASH_RECEIPT") cashIn += t.amount;
-      if (t.type === "CASH_PAYMENT") cashOut += t.amount;
-      if (t.type === "BANK_RECEIPT") bankIn += t.amount;
-      if (t.type === "BANK_PAYMENT") bankOut += t.amount;
-
-      if (t.type === "FUND_TRANSFER") {
-        if (t.paymentMode === "Cash") cashOut += t.amount;
-        else bankOut += t.amount;
+      if (t.type === "CASH_PAYMENT" || t.type === "FUND_TRANSFER") {
+        cashOut += t.amount;
       }
     });
 
-    incomingTransfers.forEach((t) => {
-      // Add to KPIs as Inflow for the destination
-      if (t.paymentMode === "Cash") cashIn += t.amount;
-      else bankIn += t.amount;
-
-      // If we are looking at a specific company that is strictly the destination,
-      // we need to add a cloned inward version of this transaction for charts/lists
+    // Process incoming cash transfers
+    todayIncomingTransfers.forEach((t) => {
+      cashIn += t.amount;
       if (!uniqueTxns.has(t.id)) {
         uniqueTxns.set(t.id + "_in", { ...t, _isIncoming: true });
       }
     });
 
+    const closingBalance = openingBalance + cashIn - cashOut;
     const allRelevantTxns = Array.from(uniqueTxns.values());
 
-    // 5. Generate Chart Data
+    // 5. Generate Chart Data (Cash Only)
     const chartData = [
-      { time: "08:00", Inflow: 0, Outflow: 0 },
-      { time: "11:00", Inflow: 0, Outflow: 0 },
-      { time: "14:00", Inflow: 0, Outflow: 0 },
-      { time: "17:00", Inflow: 0, Outflow: 0 },
-      { time: "20:00", Inflow: 0, Outflow: 0 },
-      { time: "23:00", Inflow: 0, Outflow: 0 },
+      { time: "08:00", "Cash In": 0, "Cash Out": 0 },
+      { time: "11:00", "Cash In": 0, "Cash Out": 0 },
+      { time: "14:00", "Cash In": 0, "Cash Out": 0 },
+      { time: "17:00", "Cash In": 0, "Cash Out": 0 },
+      { time: "20:00", "Cash In": 0, "Cash Out": 0 },
+      { time: "23:00", "Cash In": 0, "Cash Out": 0 },
     ];
 
     allRelevantTxns.forEach((t) => {
@@ -116,37 +149,37 @@ export async function getDashboardData(dateStr: string, companyIdStr: string) {
       else if (hour >= 20 && hour < 23) bucketIndex = 4;
       else bucketIndex = 5;
 
-      if (t.type.includes("RECEIPT") || t._isIncoming) {
-        chartData[bucketIndex].Inflow += t.amount;
+      if (t.type === "CASH_RECEIPT" || t._isIncoming) {
+        chartData[bucketIndex]["Cash In"] += t.amount;
       }
       if (
-        t.type.includes("PAYMENT") ||
+        t.type === "CASH_PAYMENT" ||
         (!t._isIncoming && t.type === "FUND_TRANSFER")
       ) {
-        chartData[bucketIndex].Outflow += t.amount;
+        chartData[bucketIndex]["Cash Out"] += t.amount;
       }
     });
 
-    // 6. Fetch Recent Activity
+    // 6. Fetch Recent Activity (Cash Only)
     const recentTransactions = allRelevantTxns
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
       .slice(0, 6)
       .map((t) => {
-        const isReceipt = t.type.includes("RECEIPT") || t._isIncoming;
+        const isReceipt = t.type === "CASH_RECEIPT" || t._isIncoming;
         const isPayment =
-          t.type.includes("PAYMENT") ||
+          t.type === "CASH_PAYMENT" ||
           (!t._isIncoming && t.type === "FUND_TRANSFER");
 
         let details =
           t.particulars || (t.ledger ? t.ledger.ledger_name : "General");
         if (t.type === "FUND_TRANSFER") {
-          if (t._isIncoming) details = `Transfer from ${t.company?.name}`;
-          else details = `Transfer to ${t.destinationCompany?.name}`;
+          if (t._isIncoming) details = `Cash received from ${t.company?.name}`;
+          else details = `Cash transferred to ${t.destinationCompany?.name}`;
         }
 
         return {
           id: t.voucherNo,
-          type: t._isIncoming ? "FUND TRANSFER IN" : t.type.replace("_", " "),
+          type: t._isIncoming ? "CASH TRANSFER IN" : t.type.replace("_", " "),
           details,
           amountIn: isReceipt
             ? t.amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })
@@ -154,38 +187,36 @@ export async function getDashboardData(dateStr: string, companyIdStr: string) {
           amountOut: isPayment
             ? t.amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })
             : "-",
-          mode: t.paymentMode || "Cash",
+          mode: "Cash", // Hardcoded since we filtered purely for cash
           date: t.businessDate.toISOString().split("T")[0],
         };
       });
 
-    // 7. 🔥 SYSTEM ALERTS (Approvals Removed) 🔥
+    // 7. System Alerts
     const alerts = [];
     let alertId = 1;
 
-    // Check for High Value Transactions today
     const highValueTxns = allRelevantTxns.filter(
       (t) => t.amount >= 50000,
     ).length;
     if (highValueTxns > 0) {
       alerts.push({
         id: alertId++,
-        title: "High Value Activity",
-        desc: `${highValueTxns} transaction(s) recorded over ₹50,000 today.`,
+        title: "High Value Cash Activity",
+        desc: `${highValueTxns} cash transaction(s) recorded over ₹50,000 today.`,
         type: "info",
         time: "Today",
       });
     }
 
-    // Fund Transfers today (Counting Outgoing Only to prevent double count in UI)
-    const fundTransfers = outgoingTransactions.filter(
+    const fundTransfers = todayOutgoing.filter(
       (t) => t.type === "FUND_TRANSFER",
     ).length;
     if (fundTransfers > 0) {
       alerts.push({
         id: alertId++,
-        title: "Fund Transfers Executed",
-        desc: `${fundTransfers} internal fund transfer(s) occurred today.`,
+        title: "Cash Transfers Executed",
+        desc: `${fundTransfers} internal cash transfer(s) occurred today.`,
         type: "warning",
         time: "Today",
       });
@@ -194,8 +225,8 @@ export async function getDashboardData(dateStr: string, companyIdStr: string) {
     if (alerts.length === 0) {
       alerts.push({
         id: alertId++,
-        title: "System Status Clear",
-        desc: "All ledgers are updated and reconciled.",
+        title: "Cashbook Status Clear",
+        desc: "All physical cash flow is updated and stable.",
         type: "success",
         time: "Just now",
       });
@@ -204,7 +235,7 @@ export async function getDashboardData(dateStr: string, companyIdStr: string) {
     return {
       success: true,
       companies,
-      kpis: { cashIn, cashOut, bankIn, bankOut },
+      kpis: { openingBalance, cashIn, cashOut, closingBalance },
       chartData,
       recentTransactions,
       alerts,
