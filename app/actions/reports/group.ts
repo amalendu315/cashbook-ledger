@@ -6,6 +6,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 export async function getGroupReportData(
   groupIdStr: string,
+  ledgerIdStr: string,
   fromDateStr: string,
   toDateStr: string,
 ) {
@@ -20,6 +21,12 @@ export async function getGroupReportData(
     // 1. Fetch Groups for the Dropdown filter
     const allGroups = await prisma.group.findMany({
       orderBy: { name: "asc" },
+    });
+
+    // 1.5 Fetch Ledgers for the Dropdown filter (used by UI for cascaded selects)
+    const allLedgers = await prisma.ledger.findMany({
+      select: { id: true, ledger_name: true, groupId: true },
+      orderBy: { ledger_name: "asc" },
     });
 
     // 2. Fetch User's allowed companies
@@ -41,11 +48,15 @@ export async function getGroupReportData(
       throw new Error("Database syncing. Please restart your Next.js server.");
     }
 
-    // 3. Fetch Transactions for the Allowed Companies in Period
+    const ledgerFilter =
+      ledgerIdStr && ledgerIdStr !== "" ? { ledgerId: ledgerIdStr } : {};
+
+    // 3. Fetch Transactions for the Allowed Companies in Period (Filtered by ledger if provided)
     const periodTxns = await prisma.transaction.findMany({
       where: {
         companyId: { in: allowedCompanyIds },
         businessDate: { gte: fromDate, lte: toDate },
+        ...ledgerFilter,
       },
       include: { ledger: true, company: { select: { name: true } } },
     });
@@ -54,6 +65,7 @@ export async function getGroupReportData(
       where: {
         destinationCompanyId: { in: allowedCompanyIds },
         businessDate: { gte: fromDate, lte: toDate },
+        ...ledgerFilter,
       },
       include: { ledger: true, destinationCompany: { select: { name: true } } },
     });
@@ -168,6 +180,7 @@ export async function getGroupReportData(
 
     return {
       groups: allGroups,
+      ledgers: allLedgers, // Sending all ledgers back to UI for filtering dropdown
       groupBalances,
       success: true,
     };
@@ -175,6 +188,7 @@ export async function getGroupReportData(
     console.error("Error generating group report:", error);
     return {
       groups: [],
+      ledgers: [],
       groupBalances: [],
       success: false,
       error: error.message,
