@@ -15,7 +15,6 @@ import {
 } from "lucide-react";
 import { getGroupReportData } from "@/app/actions/reports/group";
 
-
 // --- Reusable Components (Inlined for standalone compilation) ---
 
 interface PageHeaderProps {
@@ -67,6 +66,7 @@ export default function GroupReportPage() {
 
   // Filters
   const [selectedGroupId, setSelectedGroupId] = useState("");
+  const [selectedLedgerId, setSelectedLedgerId] = useState("");
   const [fromDate, setFromDate] = useState(() => {
     const d = new Date();
     d.setDate(1);
@@ -76,6 +76,7 @@ export default function GroupReportPage() {
 
   // Data
   const [groups, setGroups] = useState<any[]>([]);
+  const [allLedgers, setAllLedgers] = useState<any[]>([]);
   const [groupBalances, setGroupBalances] = useState<any[]>([]);
 
   useEffect(() => {
@@ -84,9 +85,15 @@ export default function GroupReportPage() {
 
   const fetchData = async () => {
     setIsLoading(true);
-    const data = await getGroupReportData(selectedGroupId, fromDate, toDate);
+    const data = await getGroupReportData(
+      selectedGroupId,
+      selectedLedgerId,
+      fromDate,
+      toDate,
+    );
     if (data.success) {
       if (groups.length === 0) setGroups(data.groups || []);
+      if (allLedgers.length === 0) setAllLedgers(data.ledgers || []);
       setGroupBalances(data.groupBalances || []);
       // Auto-expand first group if exists
       if (data.groupBalances?.length > 0) {
@@ -100,6 +107,11 @@ export default function GroupReportPage() {
 
   const handleGenerate = () => {
     fetchData();
+  };
+
+  const handleGroupChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedGroupId(e.target.value);
+    setSelectedLedgerId(""); // Reset ledger selection when group changes
   };
 
   const grandTotalNet = groupBalances.reduce(
@@ -172,22 +184,44 @@ export default function GroupReportPage() {
           <Filter className="h-4 w-4" /> Report Parameters
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
           <div className="lg:col-span-1">
             <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase">
               Select Group
             </label>
             <select
               value={selectedGroupId}
-              onChange={(e) => setSelectedGroupId(e.target.value)}
+              onChange={handleGroupChange}
               className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
             >
-              <option value="">All Groups (Enterprise View)</option>
+              <option value="">All Groups</option>
               {groups.map((g) => (
                 <option key={g.id} value={g.id}>
                   {g.name}
                 </option>
               ))}
+            </select>
+          </div>
+
+          <div className="lg:col-span-1">
+            <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase">
+              Select Ledger
+            </label>
+            <select
+              value={selectedLedgerId}
+              onChange={(e) => setSelectedLedgerId(e.target.value)}
+              className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+            >
+              <option value="">All Ledgers</option>
+              {allLedgers
+                .filter(
+                  (l) => !selectedGroupId || l.groupId === selectedGroupId,
+                )
+                .map((l) => (
+                  <option key={l.id} value={l.id}>
+                    {l.ledger_name}
+                  </option>
+                ))}
             </select>
           </div>
 
@@ -225,7 +259,7 @@ export default function GroupReportPage() {
             <button
               onClick={handleGenerate}
               disabled={isLoading}
-              className="w-full lg:w-auto px-6 py-2.5 bg-slate-900 text-white rounded-lg text-sm font-bold shadow-sm hover:bg-slate-800 transition-colors flex items-center justify-center gap-2 disabled:opacity-70"
+              className="w-full px-6 py-2.5 bg-slate-900 text-white rounded-lg text-sm font-bold shadow-sm hover:bg-slate-800 transition-colors flex items-center justify-center gap-2 disabled:opacity-70"
             >
               <Search className="h-4 w-4" />{" "}
               {isLoading ? "Loading..." : "Consolidate"}
