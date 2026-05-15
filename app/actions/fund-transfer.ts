@@ -37,10 +37,25 @@ export async function getFundTransferData(filters?: FilterParams) {
       orderBy: { name: "asc" },
     });
 
-    // 2.5 Fetch Cash Payment Modes ONLY
+    // 2.5 Fetch Cash Payment Modes and their Company Assignments (CASH ONLY)
     const paymentModes = await prisma.paymentMode.findMany({
-      where: { isActive: true, category: "CASH" },
-      select: { id: true, name: true },
+      where: {
+        isActive: true,
+        category: "CASH",
+        ...(isAdmin
+          ? {}
+          : {
+              OR: [
+                { companies: { none: {} } },
+                { companies: { some: { companyId: { in: userCompanyIds } } } },
+              ],
+            }),
+      },
+      select: {
+        id: true,
+        name: true,
+        companies: { select: { companyId: true } },
+      },
       orderBy: { name: "asc" },
     });
 
@@ -100,7 +115,7 @@ export async function getFundTransferData(filters?: FilterParams) {
           company: { select: { name: true } },
           destinationCompany: { select: { name: true } },
           createdBy: { select: { name: true } },
-          paymentMode: { select: { name: true } }, // Include payment mode
+          paymentMode: { select: { name: true } }, // Include payment mode relation
         },
         orderBy: { businessDate: "desc" },
       });
@@ -114,7 +129,7 @@ export async function getFundTransferData(filters?: FilterParams) {
         toId: t.destinationCompanyId,
         amount: t.amount,
         paymentModeId: t.paymentModeId,
-        mode: t.paymentMode?.name || "Cash", // Map correctly to UI table
+        mode: t.paymentMode?.name || "Cash", // Map mode to UI
         bDate: t.businessDate.toISOString().split("T")[0],
         note: t.remarks || "-",
         user: t.createdBy?.name || "System",
@@ -125,7 +140,7 @@ export async function getFundTransferData(filters?: FilterParams) {
       transactions: formattedTransactions,
       userCompanies,
       allCompanies,
-      paymentModes, // Returned to frontend
+      paymentModes, // Returned to frontend with company mappings
       success: true,
     };
   } catch (error: any) {
@@ -182,7 +197,7 @@ export async function saveFundTransfer(payload: any) {
           destinationCompanyId: payload.destinationCompanyId,
           amount: amountFloat,
           businessDate: bDate,
-          paymentModeId: payload.paymentModeId, // Save updated payment mode relation
+          paymentModeId: payload.paymentModeId, // Save dynamic payment mode
           remarks: payload.remarks,
         },
       });
@@ -194,7 +209,7 @@ export async function saveFundTransfer(payload: any) {
         data: {
           voucherNo,
           type: "FUND_TRANSFER",
-          paymentModeId: payload.paymentModeId,
+          paymentModeId: payload.paymentModeId, // Safe Payment Mode mapping
           companyId: payload.companyId,
           destinationCompanyId: payload.destinationCompanyId,
           amount: amountFloat,

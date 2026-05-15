@@ -62,13 +62,19 @@ export default function BankReceiptPage() {
       setPaymentModes(data.paymentModes || []);
 
       // Set defaults for form if data exists and we aren't editing
-      if (data.companies.length > 0 && !editingId)
+      if (!editingId) {
+        const defaultCompanyId = data.companies.length > 0 ? data.companies[0].id : "";
+        const initialValidModes = (data.paymentModes || []).filter((pm: any) => {
+          if (!pm.companies || pm.companies.length === 0) return true;
+          return pm.companies.some((c: any) => c.companyId === defaultCompanyId);
+        });
+
         setFormData((f) => ({
           ...f,
-          companyId: data.companies[0].id,
-          paymentModeId:
-            data.paymentModes?.length > 0 ? data.paymentModes[0].id : "",
+          companyId: defaultCompanyId,
+          paymentModeId: initialValidModes.length > 0 ? initialValidModes[0].id : "",
         }));
+      }
     }
     setIsLoading(false);
   };
@@ -87,39 +93,61 @@ export default function BankReceiptPage() {
     return l.companies.some((c: any) => c.companyId === formData.companyId);
   });
 
- const handleInputChange = (
-   e: React.ChangeEvent<
-     HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-   >,
- ) => {
-   const { name, value } = e.target;
+  // Derived state: Filter payment modes dynamically based on selected Company
+  const availablePaymentModes = paymentModes.filter((pm) => {
+    if (!pm.companies || pm.companies.length === 0) return true;
+    return pm.companies.some((c: any) => c.companyId === formData.companyId);
+  });
 
-   setFormData((prev) => {
-     const newData = { ...prev, [name]: value };
+  const handleInputChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >,
+  ) => {
+    const { name, value } = e.target;
 
-     // If the user changes the Company, we must validate the currently selected Ledger
-     if (name === "companyId") {
-       const newValidLedgers = ledgers.filter((l) => {
-         if (!l.companies || l.companies.length === 0) return true;
-         return l.companies.some((c: any) => c.companyId === value);
-       });
+    setFormData((prev) => {
+      const newData = { ...prev, [name]: value };
 
-       // If the old ledger is not allowed for the new company, clear the ledger selection
-       if (!newValidLedgers.some((l) => l.id === prev.ledgerId)) {
-         newData.ledgerId = "";
-       }
-     }
+      // If the user changes the Company, we must validate currently selected Ledger & Mode
+      if (name === "companyId") {
+        // Validate Ledger
+        const newValidLedgers = ledgers.filter((l) => {
+          if (!l.companies || l.companies.length === 0) return true;
+          return l.companies.some((c: any) => c.companyId === value);
+        });
 
-     return newData;
-   });
- };
+        if (!newValidLedgers.some((l) => l.id === prev.ledgerId)) {
+          newData.ledgerId = "";
+        }
+
+        // Validate Payment Mode
+        const newValidPaymentModes = paymentModes.filter((pm) => {
+          if (!pm.companies || pm.companies.length === 0) return true;
+          return pm.companies.some((c: any) => c.companyId === value);
+        });
+
+        if (!newValidPaymentModes.some((pm) => pm.id === prev.paymentModeId)) {
+          newData.paymentModeId = "";
+        }
+      }
+
+      return newData;
+    });
+  };
 
   const openNewModal = () => {
     setEditingId(null);
+    const defaultCompanyId = companies.length > 0 ? companies[0].id : "";
+    const initialValidModes = paymentModes.filter((pm: any) => {
+      if (!pm.companies || pm.companies.length === 0) return true;
+      return pm.companies.some((c: any) => c.companyId === defaultCompanyId);
+    });
+
     setFormData({
-      companyId: "",
+      companyId: defaultCompanyId,
       amount: "",
-      paymentModeId: paymentModes.length > 0 ? paymentModes[0].id : "",
+      paymentModeId: initialValidModes.length > 0 ? initialValidModes[0].id : "",
       businessDate: new Date().toISOString().split("T")[0],
       ledgerId: "",
       remarks: "",
@@ -148,7 +176,7 @@ export default function BankReceiptPage() {
       !formData.paymentModeId
     ) {
       return alert(
-        "Please fill in all required fields (Hotel, Ledger, and Amount).",
+        "Please fill in all required fields (Hotel, Ledger, Payment Mode, and Amount).",
       );
     }
 
@@ -181,7 +209,7 @@ export default function BankReceiptPage() {
 
     const result = await deleteTransaction(id);
     if (result.success) {
-      await fetchData();
+      await fetchData(activeFilters);
     } else {
       alert("Error deleting: " + result.error);
     }
@@ -237,7 +265,6 @@ export default function BankReceiptPage() {
                 <th className="px-5 py-4">Ledger Account</th>
                 <th className="px-5 py-4 text-right">Amount (₹)</th>
                 <th className="px-5 py-4">Date & Mode</th>
-                <th className="px-5 py-4">Mode</th>
                 <th className="px-5 py-4">Remarks</th>
                 <th className="px-5 py-4 text-center">Action</th>
               </tr>
@@ -246,7 +273,7 @@ export default function BankReceiptPage() {
               {isLoading ? (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={6}
                     className="text-center py-8 text-slate-500 font-medium"
                   >
                     Loading records...
@@ -255,7 +282,7 @@ export default function BankReceiptPage() {
               ) : receipts.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={6}
                     className="text-center py-8 text-slate-500 font-medium"
                   >
                     No bank receipts found.
@@ -287,20 +314,15 @@ export default function BankReceiptPage() {
                     </td>
                     <td className="px-5 py-3">
                       <div className="font-semibold text-slate-800 text-sm">
-                        Biz: {formatDateDisplay(item.bDate)}
+                        {formatDateDisplay(item.bDate)}
                       </div>
                       <div className="text-[10px] font-bold text-slate-400 mt-0.5 uppercase tracking-wide">
                         {item.paymentModeName}
                       </div>
                     </td>
-                    {/* <td className="px-5 py-3">
-                      <span className="inline-flex px-2 py-1 bg-slate-100 border border-slate-200 rounded text-xs font-bold text-slate-700">
-                        {item.mode}
-                      </span>
-                    </td> */}
                     <td className="px-5 py-3">
                       <div
-                        className="text-sm text-slate-700 font-medium truncate max-w-37.5"
+                        className="text-sm text-slate-700 font-medium truncate max-w-50"
                         title={item.note}
                       >
                         {item.note}
@@ -405,6 +427,35 @@ export default function BankReceiptPage() {
 
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-2">
+                    Payment Mode <span className="text-rose-500">*</span>
+                  </label>
+                  <select
+                    name="paymentModeId"
+                    value={formData.paymentModeId}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-cyan-500 font-semibold cursor-pointer outline-none disabled:bg-slate-50 disabled:cursor-not-allowed"
+                    disabled={!formData.companyId}
+                  >
+                    <option value="">
+                      {formData.companyId
+                        ? "--- Select Mode ---"
+                        : "--- Select Company First ---"}
+                    </option>
+                    {availablePaymentModes.map((pm) => (
+                      <option key={pm.id} value={pm.id}>
+                        {pm.name}
+                      </option>
+                    ))}
+                  </select>
+                  {formData.companyId && availablePaymentModes.length === 0 && (
+                    <p className="text-xs text-rose-500 font-medium mt-1.5">
+                      No bank payment modes mapped to this property.
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">
                     Amount (₹) <span className="text-rose-500">*</span>
                   </label>
                   <div className="relative">
@@ -419,25 +470,6 @@ export default function BankReceiptPage() {
                       className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-cyan-500 font-extrabold text-cyan-600 outline-none text-lg"
                     />
                   </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">
-                    Payment Mode <span className="text-rose-500">*</span>
-                  </label>
-                  <select
-                    name="paymentModeId"
-                    value={formData.paymentModeId}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-cyan-500 font-semibold cursor-pointer outline-none"
-                  >
-                    <option value="">--- Select Mode ---</option>
-                    {paymentModes.map((pm) => (
-                      <option key={pm.id} value={pm.id}>
-                        {pm.name}
-                      </option>
-                    ))}
-                  </select>
                 </div>
 
                 <div>

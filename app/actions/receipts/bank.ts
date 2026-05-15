@@ -44,7 +44,6 @@ export async function getBankReceiptData(filters?: FilterParams) {
               ],
             }),
       },
-      // IMPORTANT: Include mapped companies so the frontend can filter dynamically
       select: {
         id: true,
         ledger_name: true,
@@ -53,9 +52,25 @@ export async function getBankReceiptData(filters?: FilterParams) {
       orderBy: { ledger_name: "asc" },
     });
 
+    // 2.5 Fetch Bank Payment Modes and their Company Assignments
     const paymentModes = await prisma.paymentMode.findMany({
-      where: { isActive: true, category: "BANK" },
-      select: { id: true, name: true },
+      where: {
+        isActive: true,
+        category: "BANK",
+        ...(isAdmin
+          ? {}
+          : {
+              OR: [
+                { companies: { none: {} } },
+                { companies: { some: { companyId: { in: userCompanyIds } } } },
+              ],
+            }),
+      },
+      select: {
+        id: true,
+        name: true,
+        companies: { select: { companyId: true } },
+      },
       orderBy: { name: "asc" },
     });
 
@@ -145,7 +160,7 @@ export async function getBankReceiptData(filters?: FilterParams) {
       transactions: formattedTransactions,
       companies,
       ledgers,
-      paymentModes,
+      paymentModes, // Returned to frontend with explicit mappings
       success: true,
     };
   } catch (error: any) {
@@ -165,10 +180,21 @@ export async function getBankReceiptData(filters?: FilterParams) {
 export async function saveBankReceipt(payload: any) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) throw new Error("Unauthorized");
+    if (!session?.user?.email)
+      throw new Error("Unauthorized: Session email missing.");
 
     if (!prisma.transaction)
       throw new Error("Database syncing. Please restart your Next.js server.");
+
+    // SAFETY CHECK: Ensure we have a valid User ID before attempting the insert
+    const dbUser = await prisma.user.findUnique({
+      where: { email: session.user.email },
+      select: { id: true },
+    });
+
+    if (!dbUser) {
+      throw new Error("Database error: Could not verify user identity.");
+    }
 
     if (!payload.paymentModeId) throw new Error("Payment Mode is required");
 
@@ -208,7 +234,7 @@ export async function saveBankReceipt(payload: any) {
           businessDate: bDate,
           particulars: payload.payee,
           remarks: payload.remarks,
-          createdById: session.user.id,
+          createdById: dbUser.id, // Uses the safely verified DB ID
         },
       });
     }

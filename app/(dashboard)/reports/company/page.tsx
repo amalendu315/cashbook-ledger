@@ -64,6 +64,28 @@ export default function CompanyReportPage() {
     setCurrentPage(1);
   }, [activeTab, tableSearchQuery]);
 
+  // If the company changes, ensure the selected payment mode is still valid for it
+  useEffect(() => {
+    if (selectedPaymentModeId && selectedCompanyId) {
+      const currentMode = paymentModes.find(
+        (pm: any) => pm.id === selectedPaymentModeId,
+      );
+      if (
+        currentMode &&
+        currentMode.companies &&
+        currentMode.companies.length > 0
+      ) {
+        if (
+          !currentMode.companies.some(
+            (c: any) => c.companyId === selectedCompanyId,
+          )
+        ) {
+          setSelectedPaymentModeId("");
+        }
+      }
+    }
+  }, [selectedCompanyId, paymentModes, selectedPaymentModeId]);
+
   const fetchData = async () => {
     setIsLoading(true);
     const res = await getCompanyReportData(
@@ -199,11 +221,16 @@ export default function CompanyReportPage() {
     setIsExporting(false);
   };
 
-  // Determine available payment modes based on currently selected tab
-  const availablePaymentModes = paymentModes.filter((pm) => {
-    if (activeTab === "cash") return pm.category === "CASH";
-    if (activeTab === "bank") return pm.category === "BANK";
-    return true; // Overall and Transfer show all modes
+  // Determine available payment modes based on currently selected tab AND company
+  const availablePaymentModes = paymentModes.filter((pm: any) => {
+    if (activeTab === "cash" && pm.category !== "CASH") return false;
+    if (activeTab === "bank" && pm.category !== "BANK") return false;
+
+    if (selectedCompanyId) {
+      if (!pm.companies || pm.companies.length === 0) return true;
+      return pm.companies.some((c: any) => c.companyId === selectedCompanyId);
+    }
+    return true; // Overall and Transfer show all modes if no company is selected
   });
 
   return (

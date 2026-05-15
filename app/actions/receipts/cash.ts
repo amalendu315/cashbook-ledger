@@ -1,4 +1,3 @@
-// app/actions/receipts/cash.ts
 "use server";
 
 import { prisma } from "@/lib/db";
@@ -53,9 +52,25 @@ export async function getCashReceiptData(filters?: FilterParams) {
       orderBy: { ledger_name: "asc" },
     });
 
+    // 2.5 Fetch Cash Payment Modes and their Company Assignments
     const paymentModes = await prisma.paymentMode.findMany({
-      where: { isActive: true, category: "CASH" },
-      select: { id: true, name: true },
+      where: {
+        isActive: true,
+        category: "CASH",
+        ...(isAdmin
+          ? {}
+          : {
+              OR: [
+                { companies: { none: {} } },
+                { companies: { some: { companyId: { in: userCompanyIds } } } },
+              ],
+            }),
+      },
+      select: {
+        id: true,
+        name: true,
+        companies: { select: { companyId: true } },
+      },
       orderBy: { name: "asc" },
     });
 
@@ -144,7 +159,7 @@ export async function getCashReceiptData(filters?: FilterParams) {
       transactions: formattedTransactions,
       companies,
       ledgers,
-      paymentModes, // Returned to frontend
+      paymentModes, // Returned to frontend with explicit mappings
       success: true,
     };
   } catch (error: any) {
@@ -164,10 +179,23 @@ export async function getCashReceiptData(filters?: FilterParams) {
 export async function saveCashReceipt(payload: any) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) throw new Error("Unauthorized");
+    if (!session?.user?.email)
+      throw new Error("Unauthorized: Session email missing.");
 
     if (!prisma.transaction)
       throw new Error("Database syncing. Please restart your Next.js server.");
+
+    // SAFETY CHECK: Ensure we have a valid User ID before attempting the insert
+    const dbUser = await prisma.user.findUnique({
+      where: { email: session.user.email },
+      select: { id: true },
+    });
+
+    if (!dbUser) {
+      throw new Error("Database error: Could not verify user identity.");
+    }
+
+    if (!payload.paymentModeId) throw new Error("Payment Mode is required");
 
     const amountFloat = parseFloat(payload.amount);
     if (isNaN(amountFloat) || amountFloat <= 0)
@@ -205,7 +233,7 @@ export async function saveCashReceipt(payload: any) {
           businessDate: bDate,
           particulars: payload.payee,
           remarks: payload.remarks,
-          createdById: session.user.id,
+          createdById: dbUser.id, // <-- Uses the safely verified DB ID
         },
       });
     }

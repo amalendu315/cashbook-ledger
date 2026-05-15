@@ -43,10 +43,25 @@ export async function getLedgerReportData(
       orderBy: { ledger_name: "asc" },
     });
 
-    // Fetch all active payment modes
+    // Fetch all active payment modes with their company assignments
     const paymentModes = await prisma.paymentMode.findMany({
-      where: { isActive: true },
-      select: { id: true, name: true, category: true },
+      where: {
+        isActive: true,
+        ...(isAdmin
+          ? {}
+          : {
+              OR: [
+                { companies: { none: {} } },
+                { companies: { some: { companyId: { in: userCompanyIds } } } },
+              ],
+            }),
+      },
+      select: {
+        id: true,
+        name: true,
+        category: true,
+        companies: { select: { companyId: true } },
+      },
       orderBy: { name: "asc" },
     });
 

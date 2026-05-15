@@ -200,6 +200,12 @@ exports.Prisma.CompanyLedgerMappingScalarFieldEnum = {
   mappedAt: 'mappedAt'
 };
 
+exports.Prisma.CompanyPaymentModeMappingScalarFieldEnum = {
+  companyId: 'companyId',
+  paymentModeId: 'paymentModeId',
+  mappedAt: 'mappedAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -219,7 +225,8 @@ exports.Prisma.ModelName = {
   PaymentMode: 'PaymentMode',
   Transaction: 'Transaction',
   UserCompanyAccess: 'UserCompanyAccess',
-  CompanyLedgerMapping: 'CompanyLedgerMapping'
+  CompanyLedgerMapping: 'CompanyLedgerMapping',
+  CompanyPaymentModeMapping: 'CompanyPaymentModeMapping'
 };
 
 /**

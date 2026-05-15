@@ -61,6 +61,28 @@ export default function LedgerReportPage() {
     setSelectedPaymentModeId("");
   }, [activeTab]);
 
+  // If the company changes, ensure the selected payment mode is still valid for it
+  useEffect(() => {
+    if (selectedPaymentModeId && selectedCompanyId) {
+      const currentMode = paymentModes.find(
+        (pm: any) => pm.id === selectedPaymentModeId,
+      );
+      if (
+        currentMode &&
+        currentMode.companies &&
+        currentMode.companies.length > 0
+      ) {
+        if (
+          !currentMode.companies.some(
+            (c: any) => c.companyId === selectedCompanyId,
+          )
+        ) {
+          setSelectedPaymentModeId("");
+        }
+      }
+    }
+  }, [selectedCompanyId, paymentModes, selectedPaymentModeId]);
+
   const fetchData = async () => {
     setIsLoading(true);
     const data = await getLedgerReportData(
@@ -182,11 +204,16 @@ export default function LedgerReportPage() {
     return "Ledger Entries";
   };
 
-  // Determine available payment modes based on currently selected tab
-  const availablePaymentModes = paymentModes.filter((pm) => {
-    if (activeTab === "cash") return pm.category === "CASH";
-    if (activeTab === "bank") return pm.category === "BANK";
-    return true; // Overall and Transfer show all modes
+  // Determine available payment modes based on currently selected tab AND company
+  const availablePaymentModes = paymentModes.filter((pm: any) => {
+    if (activeTab === "cash" && pm.category !== "CASH") return false;
+    if (activeTab === "bank" && pm.category !== "BANK") return false;
+
+    if (selectedCompanyId) {
+      if (!pm.companies || pm.companies.length === 0) return true;
+      return pm.companies.some((c: any) => c.companyId === selectedCompanyId);
+    }
+    return true; // Overall and Transfer show all modes if no company is selected
   });
 
   return (
@@ -260,7 +287,7 @@ export default function LedgerReportPage() {
               className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
             >
               <option value="">All Modes</option>
-              {availablePaymentModes.map((pm) => (
+              {availablePaymentModes.map((pm: any) => (
                 <option key={pm.id} value={pm.id}>
                   {pm.name}
                 </option>

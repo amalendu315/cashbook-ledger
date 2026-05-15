@@ -15,7 +15,10 @@ import {
 } from "lucide-react";
 import { PageHeader } from "@/components/reusable/page-header";
 import { DataTableShell } from "@/components/reusable/data-table-shell";
-import { TransactionFilterBox, TransactionFilters } from "@/components/reusable/transaction-filter";
+import {
+  TransactionFilterBox,
+  TransactionFilters,
+} from "@/components/reusable/transaction-filter";
 import {
   getBankPaymentData,
   saveBankPayment,
@@ -28,7 +31,7 @@ export default function BankPaymentPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [activeFilters, setActiveFilters] = useState<TransactionFilters | null>(
     null,
-  ); // <-- Add this
+  );
 
   // Data State
   const [payments, setPayments] = useState<any[]>([]);
@@ -64,11 +67,21 @@ export default function BankPaymentPage() {
       setPaymentModes(data.paymentModes || []);
 
       if (data.companies!.length > 0 && !editingId) {
+        const defaultCompanyId = data.companies[0].id;
+        const initialValidModes = (data.paymentModes || []).filter(
+          (pm: any) => {
+            if (!pm.companies || pm.companies.length === 0) return true;
+            return pm.companies.some(
+              (c: any) => c.companyId === defaultCompanyId,
+            );
+          },
+        );
+
         setFormData((f) => ({
           ...f,
-          companyId: data.companies![0].id,
+          companyId: defaultCompanyId,
           paymentModeId:
-            data.paymentModes?.length > 0 ? data.paymentModes[0].id : "",
+            initialValidModes.length > 0 ? initialValidModes[0].id : "",
         }));
       }
     }
@@ -83,10 +96,14 @@ export default function BankPaymentPage() {
 
   // Derived state: Filter ledgers dynamically based on selected Company
   const availableLedgers = ledgers.filter((l) => {
-    // If the ledger has no mapped companies, it's globally available
     if (!l.companies || l.companies.length === 0) return true;
-    // Otherwise, check if it's explicitly assigned to the selected company
     return l.companies.some((c: any) => c.companyId === formData.companyId);
+  });
+
+  // Derived state: Filter payment modes dynamically based on selected Company
+  const availablePaymentModes = paymentModes.filter((pm) => {
+    if (!pm.companies || pm.companies.length === 0) return true;
+    return pm.companies.some((c: any) => c.companyId === formData.companyId);
   });
 
   const handleInputChange = (
@@ -99,16 +116,26 @@ export default function BankPaymentPage() {
     setFormData((prev) => {
       const newData = { ...prev, [name]: value };
 
-      // If the user changes the Company, we must validate the currently selected Ledger
+      // If the user changes the Company, we must validate the currently selected Ledger & Mode
       if (name === "companyId") {
+        // Validate Ledger
         const newValidLedgers = ledgers.filter((l) => {
           if (!l.companies || l.companies.length === 0) return true;
           return l.companies.some((c: any) => c.companyId === value);
         });
 
-        // If the old ledger is not allowed for the new company, clear the ledger selection
         if (!newValidLedgers.some((l) => l.id === prev.ledgerId)) {
           newData.ledgerId = "";
+        }
+
+        // Validate Payment Mode
+        const newValidPaymentModes = paymentModes.filter((pm) => {
+          if (!pm.companies || pm.companies.length === 0) return true;
+          return pm.companies.some((c: any) => c.companyId === value);
+        });
+
+        if (!newValidPaymentModes.some((pm) => pm.id === prev.paymentModeId)) {
+          newData.paymentModeId = "";
         }
       }
 
@@ -118,10 +145,17 @@ export default function BankPaymentPage() {
 
   const openNewModal = () => {
     setEditingId(null);
+    const defaultCompanyId = companies.length > 0 ? companies[0].id : "";
+    const initialValidModes = paymentModes.filter((pm: any) => {
+      if (!pm.companies || pm.companies.length === 0) return true;
+      return pm.companies.some((c: any) => c.companyId === defaultCompanyId);
+    });
+
     setFormData({
-      companyId: "",
+      companyId: defaultCompanyId,
       amount: "",
-      paymentModeId: paymentModes.length > 0 ? paymentModes[0].id : "",
+      paymentModeId:
+        initialValidModes.length > 0 ? initialValidModes[0].id : "",
       businessDate: new Date().toISOString().split("T")[0],
       ledgerId: "",
       remarks: "",
@@ -143,9 +177,14 @@ export default function BankPaymentPage() {
   };
 
   const handleSave = async () => {
-    if (!formData.companyId || !formData.amount || !formData.ledgerId) {
+    if (
+      !formData.companyId ||
+      !formData.amount ||
+      !formData.ledgerId ||
+      !formData.paymentModeId
+    ) {
       return alert(
-        "Please fill in all required fields (Hotel, Ledger, and Amount).",
+        "Please fill in all required fields (Hotel, Ledger, Payment Mode, and Amount).",
       );
     }
 
@@ -164,7 +203,7 @@ export default function BankPaymentPage() {
     });
 
     if (result.success) {
-      await fetchData();
+      await fetchData(activeFilters);
       setIsModalOpen(false);
     } else {
       alert("Error saving transaction: " + result.error);
@@ -178,7 +217,7 @@ export default function BankPaymentPage() {
 
     const result = await deleteTransaction(id);
     if (result.success) {
-      await fetchData();
+      await fetchData(activeFilters);
     } else {
       alert("Error deleting: " + result.error);
     }
@@ -242,7 +281,7 @@ export default function BankPaymentPage() {
               {isLoading ? (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={6}
                     className="text-center py-8 text-slate-500 font-medium"
                   >
                     Loading records...
@@ -251,7 +290,7 @@ export default function BankPaymentPage() {
               ) : payments.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={6}
                     className="text-center py-8 text-slate-500 font-medium"
                   >
                     No bank payments found.
@@ -422,15 +461,25 @@ export default function BankPaymentPage() {
                     name="paymentModeId"
                     value={formData.paymentModeId}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 font-semibold cursor-pointer outline-none"
+                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 font-semibold cursor-pointer outline-none disabled:bg-slate-50 disabled:cursor-not-allowed"
+                    disabled={!formData.companyId}
                   >
-                    <option value="">--- Select Mode ---</option>
-                    {paymentModes.map((pm) => (
+                    <option value="">
+                      {formData.companyId
+                        ? "--- Select Mode ---"
+                        : "--- Select Company First ---"}
+                    </option>
+                    {availablePaymentModes.map((pm) => (
                       <option key={pm.id} value={pm.id}>
                         {pm.name}
                       </option>
                     ))}
                   </select>
+                  {formData.companyId && availablePaymentModes.length === 0 && (
+                    <p className="text-xs text-rose-500 font-medium mt-1.5">
+                      No bank payment modes mapped to this property.
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -453,7 +502,7 @@ export default function BankPaymentPage() {
                       (Proof)
                     </small>
                   </label>
-                  <div className="border border-dashed border-slate-300 rounded-xl p-2.5 flex items-center justify-center text-center hover:bg-slate-50 transition-colors cursor-pointer bg-white">
+                  <div className="border border-dashed border-slate-300 rounded-xl p-2.5 flex items-center justify-center text-center hover:bg-slate-50 transition-colors cursor-pointer bg-white h-11.5">
                     <Paperclip className="h-5 w-5 text-slate-400 mr-2" />
                     <span className="text-sm font-bold text-slate-600">
                       Choose files...

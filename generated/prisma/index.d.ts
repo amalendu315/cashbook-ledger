@@ -53,6 +53,11 @@ export type UserCompanyAccess = $Result.DefaultSelection<Prisma.$UserCompanyAcce
  * 
  */
 export type CompanyLedgerMapping = $Result.DefaultSelection<Prisma.$CompanyLedgerMappingPayload>
+/**
+ * Model CompanyPaymentModeMapping
+ * 
+ */
+export type CompanyPaymentModeMapping = $Result.DefaultSelection<Prisma.$CompanyPaymentModeMappingPayload>
 
 /**
  * ##  Prisma Client ʲˢ
@@ -254,6 +259,16 @@ export class PrismaClient<
     * ```
     */
   get companyLedgerMapping(): Prisma.CompanyLedgerMappingDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.companyPaymentModeMapping`: Exposes CRUD operations for the **CompanyPaymentModeMapping** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more CompanyPaymentModeMappings
+    * const companyPaymentModeMappings = await prisma.companyPaymentModeMapping.findMany()
+    * ```
+    */
+  get companyPaymentModeMapping(): Prisma.CompanyPaymentModeMappingDelegate<ExtArgs, ClientOptions>;
 }
 
 export namespace Prisma {
@@ -695,7 +710,8 @@ export namespace Prisma {
     PaymentMode: 'PaymentMode',
     Transaction: 'Transaction',
     UserCompanyAccess: 'UserCompanyAccess',
-    CompanyLedgerMapping: 'CompanyLedgerMapping'
+    CompanyLedgerMapping: 'CompanyLedgerMapping',
+    CompanyPaymentModeMapping: 'CompanyPaymentModeMapping'
   };
 
   export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -711,7 +727,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "user" | "company" | "group" | "ledger" | "paymentMode" | "transaction" | "userCompanyAccess" | "companyLedgerMapping"
+      modelProps: "user" | "company" | "group" | "ledger" | "paymentMode" | "transaction" | "userCompanyAccess" | "companyLedgerMapping" | "companyPaymentModeMapping"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -1243,6 +1259,72 @@ export namespace Prisma {
           }
         }
       }
+      CompanyPaymentModeMapping: {
+        payload: Prisma.$CompanyPaymentModeMappingPayload<ExtArgs>
+        fields: Prisma.CompanyPaymentModeMappingFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.CompanyPaymentModeMappingFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CompanyPaymentModeMappingPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.CompanyPaymentModeMappingFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CompanyPaymentModeMappingPayload>
+          }
+          findFirst: {
+            args: Prisma.CompanyPaymentModeMappingFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CompanyPaymentModeMappingPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.CompanyPaymentModeMappingFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CompanyPaymentModeMappingPayload>
+          }
+          findMany: {
+            args: Prisma.CompanyPaymentModeMappingFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CompanyPaymentModeMappingPayload>[]
+          }
+          create: {
+            args: Prisma.CompanyPaymentModeMappingCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CompanyPaymentModeMappingPayload>
+          }
+          createMany: {
+            args: Prisma.CompanyPaymentModeMappingCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          delete: {
+            args: Prisma.CompanyPaymentModeMappingDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CompanyPaymentModeMappingPayload>
+          }
+          update: {
+            args: Prisma.CompanyPaymentModeMappingUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CompanyPaymentModeMappingPayload>
+          }
+          deleteMany: {
+            args: Prisma.CompanyPaymentModeMappingDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.CompanyPaymentModeMappingUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.CompanyPaymentModeMappingUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CompanyPaymentModeMappingPayload>
+          }
+          aggregate: {
+            args: Prisma.CompanyPaymentModeMappingAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateCompanyPaymentModeMapping>
+          }
+          groupBy: {
+            args: Prisma.CompanyPaymentModeMappingGroupByArgs<ExtArgs>
+            result: $Utils.Optional<CompanyPaymentModeMappingGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.CompanyPaymentModeMappingCountArgs<ExtArgs>
+            result: $Utils.Optional<CompanyPaymentModeMappingCountAggregateOutputType> | number
+          }
+        }
+      }
     }
   } & {
     other: {
@@ -1359,6 +1441,7 @@ export namespace Prisma {
     transaction?: TransactionOmit
     userCompanyAccess?: UserCompanyAccessOmit
     companyLedgerMapping?: CompanyLedgerMappingOmit
+    companyPaymentModeMapping?: CompanyPaymentModeMappingOmit
   }
 
   /* Types for Logging */
@@ -1481,6 +1564,7 @@ export namespace Prisma {
   export type CompanyCountOutputType = {
     users: number
     ledgers: number
+    paymentModes: number
     transactions: number
     incomingTransfers: number
   }
@@ -1488,6 +1572,7 @@ export namespace Prisma {
   export type CompanyCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     users?: boolean | CompanyCountOutputTypeCountUsersArgs
     ledgers?: boolean | CompanyCountOutputTypeCountLedgersArgs
+    paymentModes?: boolean | CompanyCountOutputTypeCountPaymentModesArgs
     transactions?: boolean | CompanyCountOutputTypeCountTransactionsArgs
     incomingTransfers?: boolean | CompanyCountOutputTypeCountIncomingTransfersArgs
   }
@@ -1515,6 +1600,13 @@ export namespace Prisma {
    */
   export type CompanyCountOutputTypeCountLedgersArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: CompanyLedgerMappingWhereInput
+  }
+
+  /**
+   * CompanyCountOutputType without action
+   */
+  export type CompanyCountOutputTypeCountPaymentModesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: CompanyPaymentModeMappingWhereInput
   }
 
   /**
@@ -1609,10 +1701,12 @@ export namespace Prisma {
 
   export type PaymentModeCountOutputType = {
     transactions: number
+    companies: number
   }
 
   export type PaymentModeCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     transactions?: boolean | PaymentModeCountOutputTypeCountTransactionsArgs
+    companies?: boolean | PaymentModeCountOutputTypeCountCompaniesArgs
   }
 
   // Custom InputTypes
@@ -1631,6 +1725,13 @@ export namespace Prisma {
    */
   export type PaymentModeCountOutputTypeCountTransactionsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: TransactionWhereInput
+  }
+
+  /**
+   * PaymentModeCountOutputType without action
+   */
+  export type PaymentModeCountOutputTypeCountCompaniesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: CompanyPaymentModeMappingWhereInput
   }
 
 
@@ -2824,6 +2925,7 @@ export namespace Prisma {
     updatedAt?: boolean
     users?: boolean | Company$usersArgs<ExtArgs>
     ledgers?: boolean | Company$ledgersArgs<ExtArgs>
+    paymentModes?: boolean | Company$paymentModesArgs<ExtArgs>
     transactions?: boolean | Company$transactionsArgs<ExtArgs>
     incomingTransfers?: boolean | Company$incomingTransfersArgs<ExtArgs>
     _count?: boolean | CompanyCountOutputTypeDefaultArgs<ExtArgs>
@@ -2843,6 +2945,7 @@ export namespace Prisma {
   export type CompanyInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     users?: boolean | Company$usersArgs<ExtArgs>
     ledgers?: boolean | Company$ledgersArgs<ExtArgs>
+    paymentModes?: boolean | Company$paymentModesArgs<ExtArgs>
     transactions?: boolean | Company$transactionsArgs<ExtArgs>
     incomingTransfers?: boolean | Company$incomingTransfersArgs<ExtArgs>
     _count?: boolean | CompanyCountOutputTypeDefaultArgs<ExtArgs>
@@ -2853,6 +2956,7 @@ export namespace Prisma {
     objects: {
       users: Prisma.$UserCompanyAccessPayload<ExtArgs>[]
       ledgers: Prisma.$CompanyLedgerMappingPayload<ExtArgs>[]
+      paymentModes: Prisma.$CompanyPaymentModeMappingPayload<ExtArgs>[]
       transactions: Prisma.$TransactionPayload<ExtArgs>[]
       incomingTransfers: Prisma.$TransactionPayload<ExtArgs>[]
     }
@@ -3204,6 +3308,7 @@ export namespace Prisma {
     readonly [Symbol.toStringTag]: "PrismaPromise"
     users<T extends Company$usersArgs<ExtArgs> = {}>(args?: Subset<T, Company$usersArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$UserCompanyAccessPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     ledgers<T extends Company$ledgersArgs<ExtArgs> = {}>(args?: Subset<T, Company$ledgersArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CompanyLedgerMappingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    paymentModes<T extends Company$paymentModesArgs<ExtArgs> = {}>(args?: Subset<T, Company$paymentModesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CompanyPaymentModeMappingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     transactions<T extends Company$transactionsArgs<ExtArgs> = {}>(args?: Subset<T, Company$transactionsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$TransactionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     incomingTransfers<T extends Company$incomingTransfersArgs<ExtArgs> = {}>(args?: Subset<T, Company$incomingTransfersArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$TransactionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
@@ -3632,6 +3737,30 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: CompanyLedgerMappingScalarFieldEnum | CompanyLedgerMappingScalarFieldEnum[]
+  }
+
+  /**
+   * Company.paymentModes
+   */
+  export type Company$paymentModesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CompanyPaymentModeMapping
+     */
+    select?: CompanyPaymentModeMappingSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CompanyPaymentModeMapping
+     */
+    omit?: CompanyPaymentModeMappingOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CompanyPaymentModeMappingInclude<ExtArgs> | null
+    where?: CompanyPaymentModeMappingWhereInput
+    orderBy?: CompanyPaymentModeMappingOrderByWithRelationInput | CompanyPaymentModeMappingOrderByWithRelationInput[]
+    cursor?: CompanyPaymentModeMappingWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: CompanyPaymentModeMappingScalarFieldEnum | CompanyPaymentModeMappingScalarFieldEnum[]
   }
 
   /**
@@ -5891,6 +6020,7 @@ export namespace Prisma {
     createdAt?: boolean
     updatedAt?: boolean
     transactions?: boolean | PaymentMode$transactionsArgs<ExtArgs>
+    companies?: boolean | PaymentMode$companiesArgs<ExtArgs>
     _count?: boolean | PaymentModeCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["paymentMode"]>
 
@@ -5908,6 +6038,7 @@ export namespace Prisma {
   export type PaymentModeOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "category" | "isActive" | "createdAt" | "updatedAt", ExtArgs["result"]["paymentMode"]>
   export type PaymentModeInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     transactions?: boolean | PaymentMode$transactionsArgs<ExtArgs>
+    companies?: boolean | PaymentMode$companiesArgs<ExtArgs>
     _count?: boolean | PaymentModeCountOutputTypeDefaultArgs<ExtArgs>
   }
 
@@ -5915,6 +6046,7 @@ export namespace Prisma {
     name: "PaymentMode"
     objects: {
       transactions: Prisma.$TransactionPayload<ExtArgs>[]
+      companies: Prisma.$CompanyPaymentModeMappingPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -6264,6 +6396,7 @@ export namespace Prisma {
   export interface Prisma__PaymentModeClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
     transactions<T extends PaymentMode$transactionsArgs<ExtArgs> = {}>(args?: Subset<T, PaymentMode$transactionsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$TransactionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    companies<T extends PaymentMode$companiesArgs<ExtArgs> = {}>(args?: Subset<T, PaymentMode$companiesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CompanyPaymentModeMappingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -6667,6 +6800,30 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: TransactionScalarFieldEnum | TransactionScalarFieldEnum[]
+  }
+
+  /**
+   * PaymentMode.companies
+   */
+  export type PaymentMode$companiesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CompanyPaymentModeMapping
+     */
+    select?: CompanyPaymentModeMappingSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CompanyPaymentModeMapping
+     */
+    omit?: CompanyPaymentModeMappingOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CompanyPaymentModeMappingInclude<ExtArgs> | null
+    where?: CompanyPaymentModeMappingWhereInput
+    orderBy?: CompanyPaymentModeMappingOrderByWithRelationInput | CompanyPaymentModeMappingOrderByWithRelationInput[]
+    cursor?: CompanyPaymentModeMappingWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: CompanyPaymentModeMappingScalarFieldEnum | CompanyPaymentModeMappingScalarFieldEnum[]
   }
 
   /**
@@ -9672,6 +9829,921 @@ export namespace Prisma {
 
 
   /**
+   * Model CompanyPaymentModeMapping
+   */
+
+  export type AggregateCompanyPaymentModeMapping = {
+    _count: CompanyPaymentModeMappingCountAggregateOutputType | null
+    _min: CompanyPaymentModeMappingMinAggregateOutputType | null
+    _max: CompanyPaymentModeMappingMaxAggregateOutputType | null
+  }
+
+  export type CompanyPaymentModeMappingMinAggregateOutputType = {
+    companyId: string | null
+    paymentModeId: string | null
+    mappedAt: Date | null
+  }
+
+  export type CompanyPaymentModeMappingMaxAggregateOutputType = {
+    companyId: string | null
+    paymentModeId: string | null
+    mappedAt: Date | null
+  }
+
+  export type CompanyPaymentModeMappingCountAggregateOutputType = {
+    companyId: number
+    paymentModeId: number
+    mappedAt: number
+    _all: number
+  }
+
+
+  export type CompanyPaymentModeMappingMinAggregateInputType = {
+    companyId?: true
+    paymentModeId?: true
+    mappedAt?: true
+  }
+
+  export type CompanyPaymentModeMappingMaxAggregateInputType = {
+    companyId?: true
+    paymentModeId?: true
+    mappedAt?: true
+  }
+
+  export type CompanyPaymentModeMappingCountAggregateInputType = {
+    companyId?: true
+    paymentModeId?: true
+    mappedAt?: true
+    _all?: true
+  }
+
+  export type CompanyPaymentModeMappingAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which CompanyPaymentModeMapping to aggregate.
+     */
+    where?: CompanyPaymentModeMappingWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of CompanyPaymentModeMappings to fetch.
+     */
+    orderBy?: CompanyPaymentModeMappingOrderByWithRelationInput | CompanyPaymentModeMappingOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: CompanyPaymentModeMappingWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` CompanyPaymentModeMappings from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` CompanyPaymentModeMappings.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned CompanyPaymentModeMappings
+    **/
+    _count?: true | CompanyPaymentModeMappingCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: CompanyPaymentModeMappingMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: CompanyPaymentModeMappingMaxAggregateInputType
+  }
+
+  export type GetCompanyPaymentModeMappingAggregateType<T extends CompanyPaymentModeMappingAggregateArgs> = {
+        [P in keyof T & keyof AggregateCompanyPaymentModeMapping]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateCompanyPaymentModeMapping[P]>
+      : GetScalarType<T[P], AggregateCompanyPaymentModeMapping[P]>
+  }
+
+
+
+
+  export type CompanyPaymentModeMappingGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: CompanyPaymentModeMappingWhereInput
+    orderBy?: CompanyPaymentModeMappingOrderByWithAggregationInput | CompanyPaymentModeMappingOrderByWithAggregationInput[]
+    by: CompanyPaymentModeMappingScalarFieldEnum[] | CompanyPaymentModeMappingScalarFieldEnum
+    having?: CompanyPaymentModeMappingScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: CompanyPaymentModeMappingCountAggregateInputType | true
+    _min?: CompanyPaymentModeMappingMinAggregateInputType
+    _max?: CompanyPaymentModeMappingMaxAggregateInputType
+  }
+
+  export type CompanyPaymentModeMappingGroupByOutputType = {
+    companyId: string
+    paymentModeId: string
+    mappedAt: Date
+    _count: CompanyPaymentModeMappingCountAggregateOutputType | null
+    _min: CompanyPaymentModeMappingMinAggregateOutputType | null
+    _max: CompanyPaymentModeMappingMaxAggregateOutputType | null
+  }
+
+  type GetCompanyPaymentModeMappingGroupByPayload<T extends CompanyPaymentModeMappingGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<CompanyPaymentModeMappingGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof CompanyPaymentModeMappingGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], CompanyPaymentModeMappingGroupByOutputType[P]>
+            : GetScalarType<T[P], CompanyPaymentModeMappingGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type CompanyPaymentModeMappingSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    companyId?: boolean
+    paymentModeId?: boolean
+    mappedAt?: boolean
+    company?: boolean | CompanyDefaultArgs<ExtArgs>
+    paymentMode?: boolean | PaymentModeDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["companyPaymentModeMapping"]>
+
+
+
+  export type CompanyPaymentModeMappingSelectScalar = {
+    companyId?: boolean
+    paymentModeId?: boolean
+    mappedAt?: boolean
+  }
+
+  export type CompanyPaymentModeMappingOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"companyId" | "paymentModeId" | "mappedAt", ExtArgs["result"]["companyPaymentModeMapping"]>
+  export type CompanyPaymentModeMappingInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    company?: boolean | CompanyDefaultArgs<ExtArgs>
+    paymentMode?: boolean | PaymentModeDefaultArgs<ExtArgs>
+  }
+
+  export type $CompanyPaymentModeMappingPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "CompanyPaymentModeMapping"
+    objects: {
+      company: Prisma.$CompanyPayload<ExtArgs>
+      paymentMode: Prisma.$PaymentModePayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      companyId: string
+      paymentModeId: string
+      mappedAt: Date
+    }, ExtArgs["result"]["companyPaymentModeMapping"]>
+    composites: {}
+  }
+
+  type CompanyPaymentModeMappingGetPayload<S extends boolean | null | undefined | CompanyPaymentModeMappingDefaultArgs> = $Result.GetResult<Prisma.$CompanyPaymentModeMappingPayload, S>
+
+  type CompanyPaymentModeMappingCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<CompanyPaymentModeMappingFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: CompanyPaymentModeMappingCountAggregateInputType | true
+    }
+
+  export interface CompanyPaymentModeMappingDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['CompanyPaymentModeMapping'], meta: { name: 'CompanyPaymentModeMapping' } }
+    /**
+     * Find zero or one CompanyPaymentModeMapping that matches the filter.
+     * @param {CompanyPaymentModeMappingFindUniqueArgs} args - Arguments to find a CompanyPaymentModeMapping
+     * @example
+     * // Get one CompanyPaymentModeMapping
+     * const companyPaymentModeMapping = await prisma.companyPaymentModeMapping.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends CompanyPaymentModeMappingFindUniqueArgs>(args: SelectSubset<T, CompanyPaymentModeMappingFindUniqueArgs<ExtArgs>>): Prisma__CompanyPaymentModeMappingClient<$Result.GetResult<Prisma.$CompanyPaymentModeMappingPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one CompanyPaymentModeMapping that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {CompanyPaymentModeMappingFindUniqueOrThrowArgs} args - Arguments to find a CompanyPaymentModeMapping
+     * @example
+     * // Get one CompanyPaymentModeMapping
+     * const companyPaymentModeMapping = await prisma.companyPaymentModeMapping.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends CompanyPaymentModeMappingFindUniqueOrThrowArgs>(args: SelectSubset<T, CompanyPaymentModeMappingFindUniqueOrThrowArgs<ExtArgs>>): Prisma__CompanyPaymentModeMappingClient<$Result.GetResult<Prisma.$CompanyPaymentModeMappingPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first CompanyPaymentModeMapping that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {CompanyPaymentModeMappingFindFirstArgs} args - Arguments to find a CompanyPaymentModeMapping
+     * @example
+     * // Get one CompanyPaymentModeMapping
+     * const companyPaymentModeMapping = await prisma.companyPaymentModeMapping.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends CompanyPaymentModeMappingFindFirstArgs>(args?: SelectSubset<T, CompanyPaymentModeMappingFindFirstArgs<ExtArgs>>): Prisma__CompanyPaymentModeMappingClient<$Result.GetResult<Prisma.$CompanyPaymentModeMappingPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first CompanyPaymentModeMapping that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {CompanyPaymentModeMappingFindFirstOrThrowArgs} args - Arguments to find a CompanyPaymentModeMapping
+     * @example
+     * // Get one CompanyPaymentModeMapping
+     * const companyPaymentModeMapping = await prisma.companyPaymentModeMapping.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends CompanyPaymentModeMappingFindFirstOrThrowArgs>(args?: SelectSubset<T, CompanyPaymentModeMappingFindFirstOrThrowArgs<ExtArgs>>): Prisma__CompanyPaymentModeMappingClient<$Result.GetResult<Prisma.$CompanyPaymentModeMappingPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more CompanyPaymentModeMappings that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {CompanyPaymentModeMappingFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all CompanyPaymentModeMappings
+     * const companyPaymentModeMappings = await prisma.companyPaymentModeMapping.findMany()
+     * 
+     * // Get first 10 CompanyPaymentModeMappings
+     * const companyPaymentModeMappings = await prisma.companyPaymentModeMapping.findMany({ take: 10 })
+     * 
+     * // Only select the `companyId`
+     * const companyPaymentModeMappingWithCompanyIdOnly = await prisma.companyPaymentModeMapping.findMany({ select: { companyId: true } })
+     * 
+     */
+    findMany<T extends CompanyPaymentModeMappingFindManyArgs>(args?: SelectSubset<T, CompanyPaymentModeMappingFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CompanyPaymentModeMappingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a CompanyPaymentModeMapping.
+     * @param {CompanyPaymentModeMappingCreateArgs} args - Arguments to create a CompanyPaymentModeMapping.
+     * @example
+     * // Create one CompanyPaymentModeMapping
+     * const CompanyPaymentModeMapping = await prisma.companyPaymentModeMapping.create({
+     *   data: {
+     *     // ... data to create a CompanyPaymentModeMapping
+     *   }
+     * })
+     * 
+     */
+    create<T extends CompanyPaymentModeMappingCreateArgs>(args: SelectSubset<T, CompanyPaymentModeMappingCreateArgs<ExtArgs>>): Prisma__CompanyPaymentModeMappingClient<$Result.GetResult<Prisma.$CompanyPaymentModeMappingPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many CompanyPaymentModeMappings.
+     * @param {CompanyPaymentModeMappingCreateManyArgs} args - Arguments to create many CompanyPaymentModeMappings.
+     * @example
+     * // Create many CompanyPaymentModeMappings
+     * const companyPaymentModeMapping = await prisma.companyPaymentModeMapping.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends CompanyPaymentModeMappingCreateManyArgs>(args?: SelectSubset<T, CompanyPaymentModeMappingCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Delete a CompanyPaymentModeMapping.
+     * @param {CompanyPaymentModeMappingDeleteArgs} args - Arguments to delete one CompanyPaymentModeMapping.
+     * @example
+     * // Delete one CompanyPaymentModeMapping
+     * const CompanyPaymentModeMapping = await prisma.companyPaymentModeMapping.delete({
+     *   where: {
+     *     // ... filter to delete one CompanyPaymentModeMapping
+     *   }
+     * })
+     * 
+     */
+    delete<T extends CompanyPaymentModeMappingDeleteArgs>(args: SelectSubset<T, CompanyPaymentModeMappingDeleteArgs<ExtArgs>>): Prisma__CompanyPaymentModeMappingClient<$Result.GetResult<Prisma.$CompanyPaymentModeMappingPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one CompanyPaymentModeMapping.
+     * @param {CompanyPaymentModeMappingUpdateArgs} args - Arguments to update one CompanyPaymentModeMapping.
+     * @example
+     * // Update one CompanyPaymentModeMapping
+     * const companyPaymentModeMapping = await prisma.companyPaymentModeMapping.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends CompanyPaymentModeMappingUpdateArgs>(args: SelectSubset<T, CompanyPaymentModeMappingUpdateArgs<ExtArgs>>): Prisma__CompanyPaymentModeMappingClient<$Result.GetResult<Prisma.$CompanyPaymentModeMappingPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more CompanyPaymentModeMappings.
+     * @param {CompanyPaymentModeMappingDeleteManyArgs} args - Arguments to filter CompanyPaymentModeMappings to delete.
+     * @example
+     * // Delete a few CompanyPaymentModeMappings
+     * const { count } = await prisma.companyPaymentModeMapping.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends CompanyPaymentModeMappingDeleteManyArgs>(args?: SelectSubset<T, CompanyPaymentModeMappingDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more CompanyPaymentModeMappings.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {CompanyPaymentModeMappingUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many CompanyPaymentModeMappings
+     * const companyPaymentModeMapping = await prisma.companyPaymentModeMapping.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends CompanyPaymentModeMappingUpdateManyArgs>(args: SelectSubset<T, CompanyPaymentModeMappingUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one CompanyPaymentModeMapping.
+     * @param {CompanyPaymentModeMappingUpsertArgs} args - Arguments to update or create a CompanyPaymentModeMapping.
+     * @example
+     * // Update or create a CompanyPaymentModeMapping
+     * const companyPaymentModeMapping = await prisma.companyPaymentModeMapping.upsert({
+     *   create: {
+     *     // ... data to create a CompanyPaymentModeMapping
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the CompanyPaymentModeMapping we want to update
+     *   }
+     * })
+     */
+    upsert<T extends CompanyPaymentModeMappingUpsertArgs>(args: SelectSubset<T, CompanyPaymentModeMappingUpsertArgs<ExtArgs>>): Prisma__CompanyPaymentModeMappingClient<$Result.GetResult<Prisma.$CompanyPaymentModeMappingPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of CompanyPaymentModeMappings.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {CompanyPaymentModeMappingCountArgs} args - Arguments to filter CompanyPaymentModeMappings to count.
+     * @example
+     * // Count the number of CompanyPaymentModeMappings
+     * const count = await prisma.companyPaymentModeMapping.count({
+     *   where: {
+     *     // ... the filter for the CompanyPaymentModeMappings we want to count
+     *   }
+     * })
+    **/
+    count<T extends CompanyPaymentModeMappingCountArgs>(
+      args?: Subset<T, CompanyPaymentModeMappingCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], CompanyPaymentModeMappingCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a CompanyPaymentModeMapping.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {CompanyPaymentModeMappingAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends CompanyPaymentModeMappingAggregateArgs>(args: Subset<T, CompanyPaymentModeMappingAggregateArgs>): Prisma.PrismaPromise<GetCompanyPaymentModeMappingAggregateType<T>>
+
+    /**
+     * Group by CompanyPaymentModeMapping.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {CompanyPaymentModeMappingGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends CompanyPaymentModeMappingGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: CompanyPaymentModeMappingGroupByArgs['orderBy'] }
+        : { orderBy?: CompanyPaymentModeMappingGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, CompanyPaymentModeMappingGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetCompanyPaymentModeMappingGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the CompanyPaymentModeMapping model
+   */
+  readonly fields: CompanyPaymentModeMappingFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for CompanyPaymentModeMapping.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__CompanyPaymentModeMappingClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    company<T extends CompanyDefaultArgs<ExtArgs> = {}>(args?: Subset<T, CompanyDefaultArgs<ExtArgs>>): Prisma__CompanyClient<$Result.GetResult<Prisma.$CompanyPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    paymentMode<T extends PaymentModeDefaultArgs<ExtArgs> = {}>(args?: Subset<T, PaymentModeDefaultArgs<ExtArgs>>): Prisma__PaymentModeClient<$Result.GetResult<Prisma.$PaymentModePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the CompanyPaymentModeMapping model
+   */
+  interface CompanyPaymentModeMappingFieldRefs {
+    readonly companyId: FieldRef<"CompanyPaymentModeMapping", 'String'>
+    readonly paymentModeId: FieldRef<"CompanyPaymentModeMapping", 'String'>
+    readonly mappedAt: FieldRef<"CompanyPaymentModeMapping", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * CompanyPaymentModeMapping findUnique
+   */
+  export type CompanyPaymentModeMappingFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CompanyPaymentModeMapping
+     */
+    select?: CompanyPaymentModeMappingSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CompanyPaymentModeMapping
+     */
+    omit?: CompanyPaymentModeMappingOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CompanyPaymentModeMappingInclude<ExtArgs> | null
+    /**
+     * Filter, which CompanyPaymentModeMapping to fetch.
+     */
+    where: CompanyPaymentModeMappingWhereUniqueInput
+  }
+
+  /**
+   * CompanyPaymentModeMapping findUniqueOrThrow
+   */
+  export type CompanyPaymentModeMappingFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CompanyPaymentModeMapping
+     */
+    select?: CompanyPaymentModeMappingSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CompanyPaymentModeMapping
+     */
+    omit?: CompanyPaymentModeMappingOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CompanyPaymentModeMappingInclude<ExtArgs> | null
+    /**
+     * Filter, which CompanyPaymentModeMapping to fetch.
+     */
+    where: CompanyPaymentModeMappingWhereUniqueInput
+  }
+
+  /**
+   * CompanyPaymentModeMapping findFirst
+   */
+  export type CompanyPaymentModeMappingFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CompanyPaymentModeMapping
+     */
+    select?: CompanyPaymentModeMappingSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CompanyPaymentModeMapping
+     */
+    omit?: CompanyPaymentModeMappingOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CompanyPaymentModeMappingInclude<ExtArgs> | null
+    /**
+     * Filter, which CompanyPaymentModeMapping to fetch.
+     */
+    where?: CompanyPaymentModeMappingWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of CompanyPaymentModeMappings to fetch.
+     */
+    orderBy?: CompanyPaymentModeMappingOrderByWithRelationInput | CompanyPaymentModeMappingOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for CompanyPaymentModeMappings.
+     */
+    cursor?: CompanyPaymentModeMappingWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` CompanyPaymentModeMappings from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` CompanyPaymentModeMappings.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of CompanyPaymentModeMappings.
+     */
+    distinct?: CompanyPaymentModeMappingScalarFieldEnum | CompanyPaymentModeMappingScalarFieldEnum[]
+  }
+
+  /**
+   * CompanyPaymentModeMapping findFirstOrThrow
+   */
+  export type CompanyPaymentModeMappingFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CompanyPaymentModeMapping
+     */
+    select?: CompanyPaymentModeMappingSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CompanyPaymentModeMapping
+     */
+    omit?: CompanyPaymentModeMappingOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CompanyPaymentModeMappingInclude<ExtArgs> | null
+    /**
+     * Filter, which CompanyPaymentModeMapping to fetch.
+     */
+    where?: CompanyPaymentModeMappingWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of CompanyPaymentModeMappings to fetch.
+     */
+    orderBy?: CompanyPaymentModeMappingOrderByWithRelationInput | CompanyPaymentModeMappingOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for CompanyPaymentModeMappings.
+     */
+    cursor?: CompanyPaymentModeMappingWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` CompanyPaymentModeMappings from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` CompanyPaymentModeMappings.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of CompanyPaymentModeMappings.
+     */
+    distinct?: CompanyPaymentModeMappingScalarFieldEnum | CompanyPaymentModeMappingScalarFieldEnum[]
+  }
+
+  /**
+   * CompanyPaymentModeMapping findMany
+   */
+  export type CompanyPaymentModeMappingFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CompanyPaymentModeMapping
+     */
+    select?: CompanyPaymentModeMappingSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CompanyPaymentModeMapping
+     */
+    omit?: CompanyPaymentModeMappingOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CompanyPaymentModeMappingInclude<ExtArgs> | null
+    /**
+     * Filter, which CompanyPaymentModeMappings to fetch.
+     */
+    where?: CompanyPaymentModeMappingWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of CompanyPaymentModeMappings to fetch.
+     */
+    orderBy?: CompanyPaymentModeMappingOrderByWithRelationInput | CompanyPaymentModeMappingOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing CompanyPaymentModeMappings.
+     */
+    cursor?: CompanyPaymentModeMappingWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` CompanyPaymentModeMappings from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` CompanyPaymentModeMappings.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of CompanyPaymentModeMappings.
+     */
+    distinct?: CompanyPaymentModeMappingScalarFieldEnum | CompanyPaymentModeMappingScalarFieldEnum[]
+  }
+
+  /**
+   * CompanyPaymentModeMapping create
+   */
+  export type CompanyPaymentModeMappingCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CompanyPaymentModeMapping
+     */
+    select?: CompanyPaymentModeMappingSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CompanyPaymentModeMapping
+     */
+    omit?: CompanyPaymentModeMappingOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CompanyPaymentModeMappingInclude<ExtArgs> | null
+    /**
+     * The data needed to create a CompanyPaymentModeMapping.
+     */
+    data: XOR<CompanyPaymentModeMappingCreateInput, CompanyPaymentModeMappingUncheckedCreateInput>
+  }
+
+  /**
+   * CompanyPaymentModeMapping createMany
+   */
+  export type CompanyPaymentModeMappingCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many CompanyPaymentModeMappings.
+     */
+    data: CompanyPaymentModeMappingCreateManyInput | CompanyPaymentModeMappingCreateManyInput[]
+  }
+
+  /**
+   * CompanyPaymentModeMapping update
+   */
+  export type CompanyPaymentModeMappingUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CompanyPaymentModeMapping
+     */
+    select?: CompanyPaymentModeMappingSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CompanyPaymentModeMapping
+     */
+    omit?: CompanyPaymentModeMappingOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CompanyPaymentModeMappingInclude<ExtArgs> | null
+    /**
+     * The data needed to update a CompanyPaymentModeMapping.
+     */
+    data: XOR<CompanyPaymentModeMappingUpdateInput, CompanyPaymentModeMappingUncheckedUpdateInput>
+    /**
+     * Choose, which CompanyPaymentModeMapping to update.
+     */
+    where: CompanyPaymentModeMappingWhereUniqueInput
+  }
+
+  /**
+   * CompanyPaymentModeMapping updateMany
+   */
+  export type CompanyPaymentModeMappingUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update CompanyPaymentModeMappings.
+     */
+    data: XOR<CompanyPaymentModeMappingUpdateManyMutationInput, CompanyPaymentModeMappingUncheckedUpdateManyInput>
+    /**
+     * Filter which CompanyPaymentModeMappings to update
+     */
+    where?: CompanyPaymentModeMappingWhereInput
+    /**
+     * Limit how many CompanyPaymentModeMappings to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * CompanyPaymentModeMapping upsert
+   */
+  export type CompanyPaymentModeMappingUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CompanyPaymentModeMapping
+     */
+    select?: CompanyPaymentModeMappingSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CompanyPaymentModeMapping
+     */
+    omit?: CompanyPaymentModeMappingOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CompanyPaymentModeMappingInclude<ExtArgs> | null
+    /**
+     * The filter to search for the CompanyPaymentModeMapping to update in case it exists.
+     */
+    where: CompanyPaymentModeMappingWhereUniqueInput
+    /**
+     * In case the CompanyPaymentModeMapping found by the `where` argument doesn't exist, create a new CompanyPaymentModeMapping with this data.
+     */
+    create: XOR<CompanyPaymentModeMappingCreateInput, CompanyPaymentModeMappingUncheckedCreateInput>
+    /**
+     * In case the CompanyPaymentModeMapping was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<CompanyPaymentModeMappingUpdateInput, CompanyPaymentModeMappingUncheckedUpdateInput>
+  }
+
+  /**
+   * CompanyPaymentModeMapping delete
+   */
+  export type CompanyPaymentModeMappingDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CompanyPaymentModeMapping
+     */
+    select?: CompanyPaymentModeMappingSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CompanyPaymentModeMapping
+     */
+    omit?: CompanyPaymentModeMappingOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CompanyPaymentModeMappingInclude<ExtArgs> | null
+    /**
+     * Filter which CompanyPaymentModeMapping to delete.
+     */
+    where: CompanyPaymentModeMappingWhereUniqueInput
+  }
+
+  /**
+   * CompanyPaymentModeMapping deleteMany
+   */
+  export type CompanyPaymentModeMappingDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which CompanyPaymentModeMappings to delete
+     */
+    where?: CompanyPaymentModeMappingWhereInput
+    /**
+     * Limit how many CompanyPaymentModeMappings to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * CompanyPaymentModeMapping without action
+   */
+  export type CompanyPaymentModeMappingDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CompanyPaymentModeMapping
+     */
+    select?: CompanyPaymentModeMappingSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CompanyPaymentModeMapping
+     */
+    omit?: CompanyPaymentModeMappingOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CompanyPaymentModeMappingInclude<ExtArgs> | null
+  }
+
+
+  /**
    * Enums
    */
 
@@ -9787,6 +10859,15 @@ export namespace Prisma {
   };
 
   export type CompanyLedgerMappingScalarFieldEnum = (typeof CompanyLedgerMappingScalarFieldEnum)[keyof typeof CompanyLedgerMappingScalarFieldEnum]
+
+
+  export const CompanyPaymentModeMappingScalarFieldEnum: {
+    companyId: 'companyId',
+    paymentModeId: 'paymentModeId',
+    mappedAt: 'mappedAt'
+  };
+
+  export type CompanyPaymentModeMappingScalarFieldEnum = (typeof CompanyPaymentModeMappingScalarFieldEnum)[keyof typeof CompanyPaymentModeMappingScalarFieldEnum]
 
 
   export const SortOrder: {
@@ -9932,6 +11013,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFilter<"Company"> | Date | string
     users?: UserCompanyAccessListRelationFilter
     ledgers?: CompanyLedgerMappingListRelationFilter
+    paymentModes?: CompanyPaymentModeMappingListRelationFilter
     transactions?: TransactionListRelationFilter
     incomingTransfers?: TransactionListRelationFilter
   }
@@ -9944,6 +11026,7 @@ export namespace Prisma {
     updatedAt?: SortOrder
     users?: UserCompanyAccessOrderByRelationAggregateInput
     ledgers?: CompanyLedgerMappingOrderByRelationAggregateInput
+    paymentModes?: CompanyPaymentModeMappingOrderByRelationAggregateInput
     transactions?: TransactionOrderByRelationAggregateInput
     incomingTransfers?: TransactionOrderByRelationAggregateInput
   }
@@ -9959,6 +11042,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFilter<"Company"> | Date | string
     users?: UserCompanyAccessListRelationFilter
     ledgers?: CompanyLedgerMappingListRelationFilter
+    paymentModes?: CompanyPaymentModeMappingListRelationFilter
     transactions?: TransactionListRelationFilter
     incomingTransfers?: TransactionListRelationFilter
   }, "id" | "companyCode">
@@ -10129,6 +11213,7 @@ export namespace Prisma {
     createdAt?: DateTimeFilter<"PaymentMode"> | Date | string
     updatedAt?: DateTimeFilter<"PaymentMode"> | Date | string
     transactions?: TransactionListRelationFilter
+    companies?: CompanyPaymentModeMappingListRelationFilter
   }
 
   export type PaymentModeOrderByWithRelationInput = {
@@ -10139,6 +11224,7 @@ export namespace Prisma {
     createdAt?: SortOrder
     updatedAt?: SortOrder
     transactions?: TransactionOrderByRelationAggregateInput
+    companies?: CompanyPaymentModeMappingOrderByRelationAggregateInput
   }
 
   export type PaymentModeWhereUniqueInput = Prisma.AtLeast<{
@@ -10152,6 +11238,7 @@ export namespace Prisma {
     createdAt?: DateTimeFilter<"PaymentMode"> | Date | string
     updatedAt?: DateTimeFilter<"PaymentMode"> | Date | string
     transactions?: TransactionListRelationFilter
+    companies?: CompanyPaymentModeMappingListRelationFilter
   }, "id" | "name">
 
   export type PaymentModeOrderByWithAggregationInput = {
@@ -10405,6 +11492,55 @@ export namespace Prisma {
     mappedAt?: DateTimeWithAggregatesFilter<"CompanyLedgerMapping"> | Date | string
   }
 
+  export type CompanyPaymentModeMappingWhereInput = {
+    AND?: CompanyPaymentModeMappingWhereInput | CompanyPaymentModeMappingWhereInput[]
+    OR?: CompanyPaymentModeMappingWhereInput[]
+    NOT?: CompanyPaymentModeMappingWhereInput | CompanyPaymentModeMappingWhereInput[]
+    companyId?: StringFilter<"CompanyPaymentModeMapping"> | string
+    paymentModeId?: StringFilter<"CompanyPaymentModeMapping"> | string
+    mappedAt?: DateTimeFilter<"CompanyPaymentModeMapping"> | Date | string
+    company?: XOR<CompanyScalarRelationFilter, CompanyWhereInput>
+    paymentMode?: XOR<PaymentModeScalarRelationFilter, PaymentModeWhereInput>
+  }
+
+  export type CompanyPaymentModeMappingOrderByWithRelationInput = {
+    companyId?: SortOrder
+    paymentModeId?: SortOrder
+    mappedAt?: SortOrder
+    company?: CompanyOrderByWithRelationInput
+    paymentMode?: PaymentModeOrderByWithRelationInput
+  }
+
+  export type CompanyPaymentModeMappingWhereUniqueInput = Prisma.AtLeast<{
+    companyId_paymentModeId?: CompanyPaymentModeMappingCompanyIdPaymentModeIdCompoundUniqueInput
+    AND?: CompanyPaymentModeMappingWhereInput | CompanyPaymentModeMappingWhereInput[]
+    OR?: CompanyPaymentModeMappingWhereInput[]
+    NOT?: CompanyPaymentModeMappingWhereInput | CompanyPaymentModeMappingWhereInput[]
+    companyId?: StringFilter<"CompanyPaymentModeMapping"> | string
+    paymentModeId?: StringFilter<"CompanyPaymentModeMapping"> | string
+    mappedAt?: DateTimeFilter<"CompanyPaymentModeMapping"> | Date | string
+    company?: XOR<CompanyScalarRelationFilter, CompanyWhereInput>
+    paymentMode?: XOR<PaymentModeScalarRelationFilter, PaymentModeWhereInput>
+  }, "companyId_paymentModeId">
+
+  export type CompanyPaymentModeMappingOrderByWithAggregationInput = {
+    companyId?: SortOrder
+    paymentModeId?: SortOrder
+    mappedAt?: SortOrder
+    _count?: CompanyPaymentModeMappingCountOrderByAggregateInput
+    _max?: CompanyPaymentModeMappingMaxOrderByAggregateInput
+    _min?: CompanyPaymentModeMappingMinOrderByAggregateInput
+  }
+
+  export type CompanyPaymentModeMappingScalarWhereWithAggregatesInput = {
+    AND?: CompanyPaymentModeMappingScalarWhereWithAggregatesInput | CompanyPaymentModeMappingScalarWhereWithAggregatesInput[]
+    OR?: CompanyPaymentModeMappingScalarWhereWithAggregatesInput[]
+    NOT?: CompanyPaymentModeMappingScalarWhereWithAggregatesInput | CompanyPaymentModeMappingScalarWhereWithAggregatesInput[]
+    companyId?: StringWithAggregatesFilter<"CompanyPaymentModeMapping"> | string
+    paymentModeId?: StringWithAggregatesFilter<"CompanyPaymentModeMapping"> | string
+    mappedAt?: DateTimeWithAggregatesFilter<"CompanyPaymentModeMapping"> | Date | string
+  }
+
   export type UserCreateInput = {
     id?: string
     email: string
@@ -10498,6 +11634,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     users?: UserCompanyAccessCreateNestedManyWithoutCompanyInput
     ledgers?: CompanyLedgerMappingCreateNestedManyWithoutCompanyInput
+    paymentModes?: CompanyPaymentModeMappingCreateNestedManyWithoutCompanyInput
     transactions?: TransactionCreateNestedManyWithoutCompanyInput
     incomingTransfers?: TransactionCreateNestedManyWithoutDestinationCompanyInput
   }
@@ -10510,6 +11647,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     users?: UserCompanyAccessUncheckedCreateNestedManyWithoutCompanyInput
     ledgers?: CompanyLedgerMappingUncheckedCreateNestedManyWithoutCompanyInput
+    paymentModes?: CompanyPaymentModeMappingUncheckedCreateNestedManyWithoutCompanyInput
     transactions?: TransactionUncheckedCreateNestedManyWithoutCompanyInput
     incomingTransfers?: TransactionUncheckedCreateNestedManyWithoutDestinationCompanyInput
   }
@@ -10522,6 +11660,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     users?: UserCompanyAccessUpdateManyWithoutCompanyNestedInput
     ledgers?: CompanyLedgerMappingUpdateManyWithoutCompanyNestedInput
+    paymentModes?: CompanyPaymentModeMappingUpdateManyWithoutCompanyNestedInput
     transactions?: TransactionUpdateManyWithoutCompanyNestedInput
     incomingTransfers?: TransactionUpdateManyWithoutDestinationCompanyNestedInput
   }
@@ -10534,6 +11673,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     users?: UserCompanyAccessUncheckedUpdateManyWithoutCompanyNestedInput
     ledgers?: CompanyLedgerMappingUncheckedUpdateManyWithoutCompanyNestedInput
+    paymentModes?: CompanyPaymentModeMappingUncheckedUpdateManyWithoutCompanyNestedInput
     transactions?: TransactionUncheckedUpdateManyWithoutCompanyNestedInput
     incomingTransfers?: TransactionUncheckedUpdateManyWithoutDestinationCompanyNestedInput
   }
@@ -10714,6 +11854,7 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     transactions?: TransactionCreateNestedManyWithoutPaymentModeInput
+    companies?: CompanyPaymentModeMappingCreateNestedManyWithoutPaymentModeInput
   }
 
   export type PaymentModeUncheckedCreateInput = {
@@ -10724,6 +11865,7 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     transactions?: TransactionUncheckedCreateNestedManyWithoutPaymentModeInput
+    companies?: CompanyPaymentModeMappingUncheckedCreateNestedManyWithoutPaymentModeInput
   }
 
   export type PaymentModeUpdateInput = {
@@ -10734,6 +11876,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     transactions?: TransactionUpdateManyWithoutPaymentModeNestedInput
+    companies?: CompanyPaymentModeMappingUpdateManyWithoutPaymentModeNestedInput
   }
 
   export type PaymentModeUncheckedUpdateInput = {
@@ -10744,6 +11887,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     transactions?: TransactionUncheckedUpdateManyWithoutPaymentModeNestedInput
+    companies?: CompanyPaymentModeMappingUncheckedUpdateManyWithoutPaymentModeNestedInput
   }
 
   export type PaymentModeCreateManyInput = {
@@ -10988,6 +12132,46 @@ export namespace Prisma {
     mappedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type CompanyPaymentModeMappingCreateInput = {
+    mappedAt?: Date | string
+    company: CompanyCreateNestedOneWithoutPaymentModesInput
+    paymentMode: PaymentModeCreateNestedOneWithoutCompaniesInput
+  }
+
+  export type CompanyPaymentModeMappingUncheckedCreateInput = {
+    companyId: string
+    paymentModeId: string
+    mappedAt?: Date | string
+  }
+
+  export type CompanyPaymentModeMappingUpdateInput = {
+    mappedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    company?: CompanyUpdateOneRequiredWithoutPaymentModesNestedInput
+    paymentMode?: PaymentModeUpdateOneRequiredWithoutCompaniesNestedInput
+  }
+
+  export type CompanyPaymentModeMappingUncheckedUpdateInput = {
+    companyId?: StringFieldUpdateOperationsInput | string
+    paymentModeId?: StringFieldUpdateOperationsInput | string
+    mappedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type CompanyPaymentModeMappingCreateManyInput = {
+    companyId: string
+    paymentModeId: string
+    mappedAt?: Date | string
+  }
+
+  export type CompanyPaymentModeMappingUpdateManyMutationInput = {
+    mappedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type CompanyPaymentModeMappingUncheckedUpdateManyInput = {
+    companyId?: StringFieldUpdateOperationsInput | string
+    paymentModeId?: StringFieldUpdateOperationsInput | string
+    mappedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type StringFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel>
     in?: string[]
@@ -11116,7 +12300,17 @@ export namespace Prisma {
     none?: CompanyLedgerMappingWhereInput
   }
 
+  export type CompanyPaymentModeMappingListRelationFilter = {
+    every?: CompanyPaymentModeMappingWhereInput
+    some?: CompanyPaymentModeMappingWhereInput
+    none?: CompanyPaymentModeMappingWhereInput
+  }
+
   export type CompanyLedgerMappingOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type CompanyPaymentModeMappingOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
@@ -11458,6 +12652,29 @@ export namespace Prisma {
     mappedAt?: SortOrder
   }
 
+  export type CompanyPaymentModeMappingCompanyIdPaymentModeIdCompoundUniqueInput = {
+    companyId: string
+    paymentModeId: string
+  }
+
+  export type CompanyPaymentModeMappingCountOrderByAggregateInput = {
+    companyId?: SortOrder
+    paymentModeId?: SortOrder
+    mappedAt?: SortOrder
+  }
+
+  export type CompanyPaymentModeMappingMaxOrderByAggregateInput = {
+    companyId?: SortOrder
+    paymentModeId?: SortOrder
+    mappedAt?: SortOrder
+  }
+
+  export type CompanyPaymentModeMappingMinOrderByAggregateInput = {
+    companyId?: SortOrder
+    paymentModeId?: SortOrder
+    mappedAt?: SortOrder
+  }
+
   export type UserCompanyAccessCreateNestedManyWithoutUserInput = {
     create?: XOR<UserCompanyAccessCreateWithoutUserInput, UserCompanyAccessUncheckedCreateWithoutUserInput> | UserCompanyAccessCreateWithoutUserInput[] | UserCompanyAccessUncheckedCreateWithoutUserInput[]
     connectOrCreate?: UserCompanyAccessCreateOrConnectWithoutUserInput | UserCompanyAccessCreateOrConnectWithoutUserInput[]
@@ -11568,6 +12785,13 @@ export namespace Prisma {
     connect?: CompanyLedgerMappingWhereUniqueInput | CompanyLedgerMappingWhereUniqueInput[]
   }
 
+  export type CompanyPaymentModeMappingCreateNestedManyWithoutCompanyInput = {
+    create?: XOR<CompanyPaymentModeMappingCreateWithoutCompanyInput, CompanyPaymentModeMappingUncheckedCreateWithoutCompanyInput> | CompanyPaymentModeMappingCreateWithoutCompanyInput[] | CompanyPaymentModeMappingUncheckedCreateWithoutCompanyInput[]
+    connectOrCreate?: CompanyPaymentModeMappingCreateOrConnectWithoutCompanyInput | CompanyPaymentModeMappingCreateOrConnectWithoutCompanyInput[]
+    createMany?: CompanyPaymentModeMappingCreateManyCompanyInputEnvelope
+    connect?: CompanyPaymentModeMappingWhereUniqueInput | CompanyPaymentModeMappingWhereUniqueInput[]
+  }
+
   export type TransactionCreateNestedManyWithoutCompanyInput = {
     create?: XOR<TransactionCreateWithoutCompanyInput, TransactionUncheckedCreateWithoutCompanyInput> | TransactionCreateWithoutCompanyInput[] | TransactionUncheckedCreateWithoutCompanyInput[]
     connectOrCreate?: TransactionCreateOrConnectWithoutCompanyInput | TransactionCreateOrConnectWithoutCompanyInput[]
@@ -11594,6 +12818,13 @@ export namespace Prisma {
     connectOrCreate?: CompanyLedgerMappingCreateOrConnectWithoutCompanyInput | CompanyLedgerMappingCreateOrConnectWithoutCompanyInput[]
     createMany?: CompanyLedgerMappingCreateManyCompanyInputEnvelope
     connect?: CompanyLedgerMappingWhereUniqueInput | CompanyLedgerMappingWhereUniqueInput[]
+  }
+
+  export type CompanyPaymentModeMappingUncheckedCreateNestedManyWithoutCompanyInput = {
+    create?: XOR<CompanyPaymentModeMappingCreateWithoutCompanyInput, CompanyPaymentModeMappingUncheckedCreateWithoutCompanyInput> | CompanyPaymentModeMappingCreateWithoutCompanyInput[] | CompanyPaymentModeMappingUncheckedCreateWithoutCompanyInput[]
+    connectOrCreate?: CompanyPaymentModeMappingCreateOrConnectWithoutCompanyInput | CompanyPaymentModeMappingCreateOrConnectWithoutCompanyInput[]
+    createMany?: CompanyPaymentModeMappingCreateManyCompanyInputEnvelope
+    connect?: CompanyPaymentModeMappingWhereUniqueInput | CompanyPaymentModeMappingWhereUniqueInput[]
   }
 
   export type TransactionUncheckedCreateNestedManyWithoutCompanyInput = {
@@ -11636,6 +12867,20 @@ export namespace Prisma {
     update?: CompanyLedgerMappingUpdateWithWhereUniqueWithoutCompanyInput | CompanyLedgerMappingUpdateWithWhereUniqueWithoutCompanyInput[]
     updateMany?: CompanyLedgerMappingUpdateManyWithWhereWithoutCompanyInput | CompanyLedgerMappingUpdateManyWithWhereWithoutCompanyInput[]
     deleteMany?: CompanyLedgerMappingScalarWhereInput | CompanyLedgerMappingScalarWhereInput[]
+  }
+
+  export type CompanyPaymentModeMappingUpdateManyWithoutCompanyNestedInput = {
+    create?: XOR<CompanyPaymentModeMappingCreateWithoutCompanyInput, CompanyPaymentModeMappingUncheckedCreateWithoutCompanyInput> | CompanyPaymentModeMappingCreateWithoutCompanyInput[] | CompanyPaymentModeMappingUncheckedCreateWithoutCompanyInput[]
+    connectOrCreate?: CompanyPaymentModeMappingCreateOrConnectWithoutCompanyInput | CompanyPaymentModeMappingCreateOrConnectWithoutCompanyInput[]
+    upsert?: CompanyPaymentModeMappingUpsertWithWhereUniqueWithoutCompanyInput | CompanyPaymentModeMappingUpsertWithWhereUniqueWithoutCompanyInput[]
+    createMany?: CompanyPaymentModeMappingCreateManyCompanyInputEnvelope
+    set?: CompanyPaymentModeMappingWhereUniqueInput | CompanyPaymentModeMappingWhereUniqueInput[]
+    disconnect?: CompanyPaymentModeMappingWhereUniqueInput | CompanyPaymentModeMappingWhereUniqueInput[]
+    delete?: CompanyPaymentModeMappingWhereUniqueInput | CompanyPaymentModeMappingWhereUniqueInput[]
+    connect?: CompanyPaymentModeMappingWhereUniqueInput | CompanyPaymentModeMappingWhereUniqueInput[]
+    update?: CompanyPaymentModeMappingUpdateWithWhereUniqueWithoutCompanyInput | CompanyPaymentModeMappingUpdateWithWhereUniqueWithoutCompanyInput[]
+    updateMany?: CompanyPaymentModeMappingUpdateManyWithWhereWithoutCompanyInput | CompanyPaymentModeMappingUpdateManyWithWhereWithoutCompanyInput[]
+    deleteMany?: CompanyPaymentModeMappingScalarWhereInput | CompanyPaymentModeMappingScalarWhereInput[]
   }
 
   export type TransactionUpdateManyWithoutCompanyNestedInput = {
@@ -11692,6 +12937,20 @@ export namespace Prisma {
     update?: CompanyLedgerMappingUpdateWithWhereUniqueWithoutCompanyInput | CompanyLedgerMappingUpdateWithWhereUniqueWithoutCompanyInput[]
     updateMany?: CompanyLedgerMappingUpdateManyWithWhereWithoutCompanyInput | CompanyLedgerMappingUpdateManyWithWhereWithoutCompanyInput[]
     deleteMany?: CompanyLedgerMappingScalarWhereInput | CompanyLedgerMappingScalarWhereInput[]
+  }
+
+  export type CompanyPaymentModeMappingUncheckedUpdateManyWithoutCompanyNestedInput = {
+    create?: XOR<CompanyPaymentModeMappingCreateWithoutCompanyInput, CompanyPaymentModeMappingUncheckedCreateWithoutCompanyInput> | CompanyPaymentModeMappingCreateWithoutCompanyInput[] | CompanyPaymentModeMappingUncheckedCreateWithoutCompanyInput[]
+    connectOrCreate?: CompanyPaymentModeMappingCreateOrConnectWithoutCompanyInput | CompanyPaymentModeMappingCreateOrConnectWithoutCompanyInput[]
+    upsert?: CompanyPaymentModeMappingUpsertWithWhereUniqueWithoutCompanyInput | CompanyPaymentModeMappingUpsertWithWhereUniqueWithoutCompanyInput[]
+    createMany?: CompanyPaymentModeMappingCreateManyCompanyInputEnvelope
+    set?: CompanyPaymentModeMappingWhereUniqueInput | CompanyPaymentModeMappingWhereUniqueInput[]
+    disconnect?: CompanyPaymentModeMappingWhereUniqueInput | CompanyPaymentModeMappingWhereUniqueInput[]
+    delete?: CompanyPaymentModeMappingWhereUniqueInput | CompanyPaymentModeMappingWhereUniqueInput[]
+    connect?: CompanyPaymentModeMappingWhereUniqueInput | CompanyPaymentModeMappingWhereUniqueInput[]
+    update?: CompanyPaymentModeMappingUpdateWithWhereUniqueWithoutCompanyInput | CompanyPaymentModeMappingUpdateWithWhereUniqueWithoutCompanyInput[]
+    updateMany?: CompanyPaymentModeMappingUpdateManyWithWhereWithoutCompanyInput | CompanyPaymentModeMappingUpdateManyWithWhereWithoutCompanyInput[]
+    deleteMany?: CompanyPaymentModeMappingScalarWhereInput | CompanyPaymentModeMappingScalarWhereInput[]
   }
 
   export type TransactionUncheckedUpdateManyWithoutCompanyNestedInput = {
@@ -11881,11 +13140,25 @@ export namespace Prisma {
     connect?: TransactionWhereUniqueInput | TransactionWhereUniqueInput[]
   }
 
+  export type CompanyPaymentModeMappingCreateNestedManyWithoutPaymentModeInput = {
+    create?: XOR<CompanyPaymentModeMappingCreateWithoutPaymentModeInput, CompanyPaymentModeMappingUncheckedCreateWithoutPaymentModeInput> | CompanyPaymentModeMappingCreateWithoutPaymentModeInput[] | CompanyPaymentModeMappingUncheckedCreateWithoutPaymentModeInput[]
+    connectOrCreate?: CompanyPaymentModeMappingCreateOrConnectWithoutPaymentModeInput | CompanyPaymentModeMappingCreateOrConnectWithoutPaymentModeInput[]
+    createMany?: CompanyPaymentModeMappingCreateManyPaymentModeInputEnvelope
+    connect?: CompanyPaymentModeMappingWhereUniqueInput | CompanyPaymentModeMappingWhereUniqueInput[]
+  }
+
   export type TransactionUncheckedCreateNestedManyWithoutPaymentModeInput = {
     create?: XOR<TransactionCreateWithoutPaymentModeInput, TransactionUncheckedCreateWithoutPaymentModeInput> | TransactionCreateWithoutPaymentModeInput[] | TransactionUncheckedCreateWithoutPaymentModeInput[]
     connectOrCreate?: TransactionCreateOrConnectWithoutPaymentModeInput | TransactionCreateOrConnectWithoutPaymentModeInput[]
     createMany?: TransactionCreateManyPaymentModeInputEnvelope
     connect?: TransactionWhereUniqueInput | TransactionWhereUniqueInput[]
+  }
+
+  export type CompanyPaymentModeMappingUncheckedCreateNestedManyWithoutPaymentModeInput = {
+    create?: XOR<CompanyPaymentModeMappingCreateWithoutPaymentModeInput, CompanyPaymentModeMappingUncheckedCreateWithoutPaymentModeInput> | CompanyPaymentModeMappingCreateWithoutPaymentModeInput[] | CompanyPaymentModeMappingUncheckedCreateWithoutPaymentModeInput[]
+    connectOrCreate?: CompanyPaymentModeMappingCreateOrConnectWithoutPaymentModeInput | CompanyPaymentModeMappingCreateOrConnectWithoutPaymentModeInput[]
+    createMany?: CompanyPaymentModeMappingCreateManyPaymentModeInputEnvelope
+    connect?: CompanyPaymentModeMappingWhereUniqueInput | CompanyPaymentModeMappingWhereUniqueInput[]
   }
 
   export type TransactionUpdateManyWithoutPaymentModeNestedInput = {
@@ -11902,6 +13175,20 @@ export namespace Prisma {
     deleteMany?: TransactionScalarWhereInput | TransactionScalarWhereInput[]
   }
 
+  export type CompanyPaymentModeMappingUpdateManyWithoutPaymentModeNestedInput = {
+    create?: XOR<CompanyPaymentModeMappingCreateWithoutPaymentModeInput, CompanyPaymentModeMappingUncheckedCreateWithoutPaymentModeInput> | CompanyPaymentModeMappingCreateWithoutPaymentModeInput[] | CompanyPaymentModeMappingUncheckedCreateWithoutPaymentModeInput[]
+    connectOrCreate?: CompanyPaymentModeMappingCreateOrConnectWithoutPaymentModeInput | CompanyPaymentModeMappingCreateOrConnectWithoutPaymentModeInput[]
+    upsert?: CompanyPaymentModeMappingUpsertWithWhereUniqueWithoutPaymentModeInput | CompanyPaymentModeMappingUpsertWithWhereUniqueWithoutPaymentModeInput[]
+    createMany?: CompanyPaymentModeMappingCreateManyPaymentModeInputEnvelope
+    set?: CompanyPaymentModeMappingWhereUniqueInput | CompanyPaymentModeMappingWhereUniqueInput[]
+    disconnect?: CompanyPaymentModeMappingWhereUniqueInput | CompanyPaymentModeMappingWhereUniqueInput[]
+    delete?: CompanyPaymentModeMappingWhereUniqueInput | CompanyPaymentModeMappingWhereUniqueInput[]
+    connect?: CompanyPaymentModeMappingWhereUniqueInput | CompanyPaymentModeMappingWhereUniqueInput[]
+    update?: CompanyPaymentModeMappingUpdateWithWhereUniqueWithoutPaymentModeInput | CompanyPaymentModeMappingUpdateWithWhereUniqueWithoutPaymentModeInput[]
+    updateMany?: CompanyPaymentModeMappingUpdateManyWithWhereWithoutPaymentModeInput | CompanyPaymentModeMappingUpdateManyWithWhereWithoutPaymentModeInput[]
+    deleteMany?: CompanyPaymentModeMappingScalarWhereInput | CompanyPaymentModeMappingScalarWhereInput[]
+  }
+
   export type TransactionUncheckedUpdateManyWithoutPaymentModeNestedInput = {
     create?: XOR<TransactionCreateWithoutPaymentModeInput, TransactionUncheckedCreateWithoutPaymentModeInput> | TransactionCreateWithoutPaymentModeInput[] | TransactionUncheckedCreateWithoutPaymentModeInput[]
     connectOrCreate?: TransactionCreateOrConnectWithoutPaymentModeInput | TransactionCreateOrConnectWithoutPaymentModeInput[]
@@ -11914,6 +13201,20 @@ export namespace Prisma {
     update?: TransactionUpdateWithWhereUniqueWithoutPaymentModeInput | TransactionUpdateWithWhereUniqueWithoutPaymentModeInput[]
     updateMany?: TransactionUpdateManyWithWhereWithoutPaymentModeInput | TransactionUpdateManyWithWhereWithoutPaymentModeInput[]
     deleteMany?: TransactionScalarWhereInput | TransactionScalarWhereInput[]
+  }
+
+  export type CompanyPaymentModeMappingUncheckedUpdateManyWithoutPaymentModeNestedInput = {
+    create?: XOR<CompanyPaymentModeMappingCreateWithoutPaymentModeInput, CompanyPaymentModeMappingUncheckedCreateWithoutPaymentModeInput> | CompanyPaymentModeMappingCreateWithoutPaymentModeInput[] | CompanyPaymentModeMappingUncheckedCreateWithoutPaymentModeInput[]
+    connectOrCreate?: CompanyPaymentModeMappingCreateOrConnectWithoutPaymentModeInput | CompanyPaymentModeMappingCreateOrConnectWithoutPaymentModeInput[]
+    upsert?: CompanyPaymentModeMappingUpsertWithWhereUniqueWithoutPaymentModeInput | CompanyPaymentModeMappingUpsertWithWhereUniqueWithoutPaymentModeInput[]
+    createMany?: CompanyPaymentModeMappingCreateManyPaymentModeInputEnvelope
+    set?: CompanyPaymentModeMappingWhereUniqueInput | CompanyPaymentModeMappingWhereUniqueInput[]
+    disconnect?: CompanyPaymentModeMappingWhereUniqueInput | CompanyPaymentModeMappingWhereUniqueInput[]
+    delete?: CompanyPaymentModeMappingWhereUniqueInput | CompanyPaymentModeMappingWhereUniqueInput[]
+    connect?: CompanyPaymentModeMappingWhereUniqueInput | CompanyPaymentModeMappingWhereUniqueInput[]
+    update?: CompanyPaymentModeMappingUpdateWithWhereUniqueWithoutPaymentModeInput | CompanyPaymentModeMappingUpdateWithWhereUniqueWithoutPaymentModeInput[]
+    updateMany?: CompanyPaymentModeMappingUpdateManyWithWhereWithoutPaymentModeInput | CompanyPaymentModeMappingUpdateManyWithWhereWithoutPaymentModeInput[]
+    deleteMany?: CompanyPaymentModeMappingScalarWhereInput | CompanyPaymentModeMappingScalarWhereInput[]
   }
 
   export type CompanyCreateNestedOneWithoutTransactionsInput = {
@@ -12044,6 +13345,34 @@ export namespace Prisma {
     upsert?: LedgerUpsertWithoutCompaniesInput
     connect?: LedgerWhereUniqueInput
     update?: XOR<XOR<LedgerUpdateToOneWithWhereWithoutCompaniesInput, LedgerUpdateWithoutCompaniesInput>, LedgerUncheckedUpdateWithoutCompaniesInput>
+  }
+
+  export type CompanyCreateNestedOneWithoutPaymentModesInput = {
+    create?: XOR<CompanyCreateWithoutPaymentModesInput, CompanyUncheckedCreateWithoutPaymentModesInput>
+    connectOrCreate?: CompanyCreateOrConnectWithoutPaymentModesInput
+    connect?: CompanyWhereUniqueInput
+  }
+
+  export type PaymentModeCreateNestedOneWithoutCompaniesInput = {
+    create?: XOR<PaymentModeCreateWithoutCompaniesInput, PaymentModeUncheckedCreateWithoutCompaniesInput>
+    connectOrCreate?: PaymentModeCreateOrConnectWithoutCompaniesInput
+    connect?: PaymentModeWhereUniqueInput
+  }
+
+  export type CompanyUpdateOneRequiredWithoutPaymentModesNestedInput = {
+    create?: XOR<CompanyCreateWithoutPaymentModesInput, CompanyUncheckedCreateWithoutPaymentModesInput>
+    connectOrCreate?: CompanyCreateOrConnectWithoutPaymentModesInput
+    upsert?: CompanyUpsertWithoutPaymentModesInput
+    connect?: CompanyWhereUniqueInput
+    update?: XOR<XOR<CompanyUpdateToOneWithWhereWithoutPaymentModesInput, CompanyUpdateWithoutPaymentModesInput>, CompanyUncheckedUpdateWithoutPaymentModesInput>
+  }
+
+  export type PaymentModeUpdateOneRequiredWithoutCompaniesNestedInput = {
+    create?: XOR<PaymentModeCreateWithoutCompaniesInput, PaymentModeUncheckedCreateWithoutCompaniesInput>
+    connectOrCreate?: PaymentModeCreateOrConnectWithoutCompaniesInput
+    upsert?: PaymentModeUpsertWithoutCompaniesInput
+    connect?: PaymentModeWhereUniqueInput
+    update?: XOR<XOR<PaymentModeUpdateToOneWithWhereWithoutCompaniesInput, PaymentModeUpdateWithoutCompaniesInput>, PaymentModeUncheckedUpdateWithoutCompaniesInput>
   }
 
   export type NestedStringFilter<$PrismaModel = never> = {
@@ -12363,6 +13692,25 @@ export namespace Prisma {
     data: CompanyLedgerMappingCreateManyCompanyInput | CompanyLedgerMappingCreateManyCompanyInput[]
   }
 
+  export type CompanyPaymentModeMappingCreateWithoutCompanyInput = {
+    mappedAt?: Date | string
+    paymentMode: PaymentModeCreateNestedOneWithoutCompaniesInput
+  }
+
+  export type CompanyPaymentModeMappingUncheckedCreateWithoutCompanyInput = {
+    paymentModeId: string
+    mappedAt?: Date | string
+  }
+
+  export type CompanyPaymentModeMappingCreateOrConnectWithoutCompanyInput = {
+    where: CompanyPaymentModeMappingWhereUniqueInput
+    create: XOR<CompanyPaymentModeMappingCreateWithoutCompanyInput, CompanyPaymentModeMappingUncheckedCreateWithoutCompanyInput>
+  }
+
+  export type CompanyPaymentModeMappingCreateManyCompanyInputEnvelope = {
+    data: CompanyPaymentModeMappingCreateManyCompanyInput | CompanyPaymentModeMappingCreateManyCompanyInput[]
+  }
+
   export type TransactionCreateWithoutCompanyInput = {
     id?: string
     voucherNo: string
@@ -12496,6 +13844,31 @@ export namespace Prisma {
     companyId?: StringFilter<"CompanyLedgerMapping"> | string
     ledgerId?: StringFilter<"CompanyLedgerMapping"> | string
     mappedAt?: DateTimeFilter<"CompanyLedgerMapping"> | Date | string
+  }
+
+  export type CompanyPaymentModeMappingUpsertWithWhereUniqueWithoutCompanyInput = {
+    where: CompanyPaymentModeMappingWhereUniqueInput
+    update: XOR<CompanyPaymentModeMappingUpdateWithoutCompanyInput, CompanyPaymentModeMappingUncheckedUpdateWithoutCompanyInput>
+    create: XOR<CompanyPaymentModeMappingCreateWithoutCompanyInput, CompanyPaymentModeMappingUncheckedCreateWithoutCompanyInput>
+  }
+
+  export type CompanyPaymentModeMappingUpdateWithWhereUniqueWithoutCompanyInput = {
+    where: CompanyPaymentModeMappingWhereUniqueInput
+    data: XOR<CompanyPaymentModeMappingUpdateWithoutCompanyInput, CompanyPaymentModeMappingUncheckedUpdateWithoutCompanyInput>
+  }
+
+  export type CompanyPaymentModeMappingUpdateManyWithWhereWithoutCompanyInput = {
+    where: CompanyPaymentModeMappingScalarWhereInput
+    data: XOR<CompanyPaymentModeMappingUpdateManyMutationInput, CompanyPaymentModeMappingUncheckedUpdateManyWithoutCompanyInput>
+  }
+
+  export type CompanyPaymentModeMappingScalarWhereInput = {
+    AND?: CompanyPaymentModeMappingScalarWhereInput | CompanyPaymentModeMappingScalarWhereInput[]
+    OR?: CompanyPaymentModeMappingScalarWhereInput[]
+    NOT?: CompanyPaymentModeMappingScalarWhereInput | CompanyPaymentModeMappingScalarWhereInput[]
+    companyId?: StringFilter<"CompanyPaymentModeMapping"> | string
+    paymentModeId?: StringFilter<"CompanyPaymentModeMapping"> | string
+    mappedAt?: DateTimeFilter<"CompanyPaymentModeMapping"> | Date | string
   }
 
   export type TransactionUpsertWithWhereUniqueWithoutCompanyInput = {
@@ -12785,6 +14158,25 @@ export namespace Prisma {
     data: TransactionCreateManyPaymentModeInput | TransactionCreateManyPaymentModeInput[]
   }
 
+  export type CompanyPaymentModeMappingCreateWithoutPaymentModeInput = {
+    mappedAt?: Date | string
+    company: CompanyCreateNestedOneWithoutPaymentModesInput
+  }
+
+  export type CompanyPaymentModeMappingUncheckedCreateWithoutPaymentModeInput = {
+    companyId: string
+    mappedAt?: Date | string
+  }
+
+  export type CompanyPaymentModeMappingCreateOrConnectWithoutPaymentModeInput = {
+    where: CompanyPaymentModeMappingWhereUniqueInput
+    create: XOR<CompanyPaymentModeMappingCreateWithoutPaymentModeInput, CompanyPaymentModeMappingUncheckedCreateWithoutPaymentModeInput>
+  }
+
+  export type CompanyPaymentModeMappingCreateManyPaymentModeInputEnvelope = {
+    data: CompanyPaymentModeMappingCreateManyPaymentModeInput | CompanyPaymentModeMappingCreateManyPaymentModeInput[]
+  }
+
   export type TransactionUpsertWithWhereUniqueWithoutPaymentModeInput = {
     where: TransactionWhereUniqueInput
     update: XOR<TransactionUpdateWithoutPaymentModeInput, TransactionUncheckedUpdateWithoutPaymentModeInput>
@@ -12801,6 +14193,22 @@ export namespace Prisma {
     data: XOR<TransactionUpdateManyMutationInput, TransactionUncheckedUpdateManyWithoutPaymentModeInput>
   }
 
+  export type CompanyPaymentModeMappingUpsertWithWhereUniqueWithoutPaymentModeInput = {
+    where: CompanyPaymentModeMappingWhereUniqueInput
+    update: XOR<CompanyPaymentModeMappingUpdateWithoutPaymentModeInput, CompanyPaymentModeMappingUncheckedUpdateWithoutPaymentModeInput>
+    create: XOR<CompanyPaymentModeMappingCreateWithoutPaymentModeInput, CompanyPaymentModeMappingUncheckedCreateWithoutPaymentModeInput>
+  }
+
+  export type CompanyPaymentModeMappingUpdateWithWhereUniqueWithoutPaymentModeInput = {
+    where: CompanyPaymentModeMappingWhereUniqueInput
+    data: XOR<CompanyPaymentModeMappingUpdateWithoutPaymentModeInput, CompanyPaymentModeMappingUncheckedUpdateWithoutPaymentModeInput>
+  }
+
+  export type CompanyPaymentModeMappingUpdateManyWithWhereWithoutPaymentModeInput = {
+    where: CompanyPaymentModeMappingScalarWhereInput
+    data: XOR<CompanyPaymentModeMappingUpdateManyMutationInput, CompanyPaymentModeMappingUncheckedUpdateManyWithoutPaymentModeInput>
+  }
+
   export type CompanyCreateWithoutTransactionsInput = {
     id?: string
     companyCode: string
@@ -12809,6 +14217,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     users?: UserCompanyAccessCreateNestedManyWithoutCompanyInput
     ledgers?: CompanyLedgerMappingCreateNestedManyWithoutCompanyInput
+    paymentModes?: CompanyPaymentModeMappingCreateNestedManyWithoutCompanyInput
     incomingTransfers?: TransactionCreateNestedManyWithoutDestinationCompanyInput
   }
 
@@ -12820,6 +14229,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     users?: UserCompanyAccessUncheckedCreateNestedManyWithoutCompanyInput
     ledgers?: CompanyLedgerMappingUncheckedCreateNestedManyWithoutCompanyInput
+    paymentModes?: CompanyPaymentModeMappingUncheckedCreateNestedManyWithoutCompanyInput
     incomingTransfers?: TransactionUncheckedCreateNestedManyWithoutDestinationCompanyInput
   }
 
@@ -12867,6 +14277,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     users?: UserCompanyAccessCreateNestedManyWithoutCompanyInput
     ledgers?: CompanyLedgerMappingCreateNestedManyWithoutCompanyInput
+    paymentModes?: CompanyPaymentModeMappingCreateNestedManyWithoutCompanyInput
     transactions?: TransactionCreateNestedManyWithoutCompanyInput
   }
 
@@ -12878,6 +14289,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     users?: UserCompanyAccessUncheckedCreateNestedManyWithoutCompanyInput
     ledgers?: CompanyLedgerMappingUncheckedCreateNestedManyWithoutCompanyInput
+    paymentModes?: CompanyPaymentModeMappingUncheckedCreateNestedManyWithoutCompanyInput
     transactions?: TransactionUncheckedCreateNestedManyWithoutCompanyInput
   }
 
@@ -12893,6 +14305,7 @@ export namespace Prisma {
     isActive?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
+    companies?: CompanyPaymentModeMappingCreateNestedManyWithoutPaymentModeInput
   }
 
   export type PaymentModeUncheckedCreateWithoutTransactionsInput = {
@@ -12902,6 +14315,7 @@ export namespace Prisma {
     isActive?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
+    companies?: CompanyPaymentModeMappingUncheckedCreateNestedManyWithoutPaymentModeInput
   }
 
   export type PaymentModeCreateOrConnectWithoutTransactionsInput = {
@@ -12957,6 +14371,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     users?: UserCompanyAccessUpdateManyWithoutCompanyNestedInput
     ledgers?: CompanyLedgerMappingUpdateManyWithoutCompanyNestedInput
+    paymentModes?: CompanyPaymentModeMappingUpdateManyWithoutCompanyNestedInput
     incomingTransfers?: TransactionUpdateManyWithoutDestinationCompanyNestedInput
   }
 
@@ -12968,6 +14383,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     users?: UserCompanyAccessUncheckedUpdateManyWithoutCompanyNestedInput
     ledgers?: CompanyLedgerMappingUncheckedUpdateManyWithoutCompanyNestedInput
+    paymentModes?: CompanyPaymentModeMappingUncheckedUpdateManyWithoutCompanyNestedInput
     incomingTransfers?: TransactionUncheckedUpdateManyWithoutDestinationCompanyNestedInput
   }
 
@@ -13027,6 +14443,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     users?: UserCompanyAccessUpdateManyWithoutCompanyNestedInput
     ledgers?: CompanyLedgerMappingUpdateManyWithoutCompanyNestedInput
+    paymentModes?: CompanyPaymentModeMappingUpdateManyWithoutCompanyNestedInput
     transactions?: TransactionUpdateManyWithoutCompanyNestedInput
   }
 
@@ -13038,6 +14455,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     users?: UserCompanyAccessUncheckedUpdateManyWithoutCompanyNestedInput
     ledgers?: CompanyLedgerMappingUncheckedUpdateManyWithoutCompanyNestedInput
+    paymentModes?: CompanyPaymentModeMappingUncheckedUpdateManyWithoutCompanyNestedInput
     transactions?: TransactionUncheckedUpdateManyWithoutCompanyNestedInput
   }
 
@@ -13059,6 +14477,7 @@ export namespace Prisma {
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    companies?: CompanyPaymentModeMappingUpdateManyWithoutPaymentModeNestedInput
   }
 
   export type PaymentModeUncheckedUpdateWithoutTransactionsInput = {
@@ -13068,6 +14487,7 @@ export namespace Prisma {
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    companies?: CompanyPaymentModeMappingUncheckedUpdateManyWithoutPaymentModeNestedInput
   }
 
   export type UserUpsertWithoutTransactionsInput = {
@@ -13141,6 +14561,7 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     ledgers?: CompanyLedgerMappingCreateNestedManyWithoutCompanyInput
+    paymentModes?: CompanyPaymentModeMappingCreateNestedManyWithoutCompanyInput
     transactions?: TransactionCreateNestedManyWithoutCompanyInput
     incomingTransfers?: TransactionCreateNestedManyWithoutDestinationCompanyInput
   }
@@ -13152,6 +14573,7 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     ledgers?: CompanyLedgerMappingUncheckedCreateNestedManyWithoutCompanyInput
+    paymentModes?: CompanyPaymentModeMappingUncheckedCreateNestedManyWithoutCompanyInput
     transactions?: TransactionUncheckedCreateNestedManyWithoutCompanyInput
     incomingTransfers?: TransactionUncheckedCreateNestedManyWithoutDestinationCompanyInput
   }
@@ -13214,6 +14636,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     ledgers?: CompanyLedgerMappingUpdateManyWithoutCompanyNestedInput
+    paymentModes?: CompanyPaymentModeMappingUpdateManyWithoutCompanyNestedInput
     transactions?: TransactionUpdateManyWithoutCompanyNestedInput
     incomingTransfers?: TransactionUpdateManyWithoutDestinationCompanyNestedInput
   }
@@ -13225,6 +14648,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     ledgers?: CompanyLedgerMappingUncheckedUpdateManyWithoutCompanyNestedInput
+    paymentModes?: CompanyPaymentModeMappingUncheckedUpdateManyWithoutCompanyNestedInput
     transactions?: TransactionUncheckedUpdateManyWithoutCompanyNestedInput
     incomingTransfers?: TransactionUncheckedUpdateManyWithoutDestinationCompanyNestedInput
   }
@@ -13236,6 +14660,7 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     users?: UserCompanyAccessCreateNestedManyWithoutCompanyInput
+    paymentModes?: CompanyPaymentModeMappingCreateNestedManyWithoutCompanyInput
     transactions?: TransactionCreateNestedManyWithoutCompanyInput
     incomingTransfers?: TransactionCreateNestedManyWithoutDestinationCompanyInput
   }
@@ -13247,6 +14672,7 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     users?: UserCompanyAccessUncheckedCreateNestedManyWithoutCompanyInput
+    paymentModes?: CompanyPaymentModeMappingUncheckedCreateNestedManyWithoutCompanyInput
     transactions?: TransactionUncheckedCreateNestedManyWithoutCompanyInput
     incomingTransfers?: TransactionUncheckedCreateNestedManyWithoutDestinationCompanyInput
   }
@@ -13305,6 +14731,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     users?: UserCompanyAccessUpdateManyWithoutCompanyNestedInput
+    paymentModes?: CompanyPaymentModeMappingUpdateManyWithoutCompanyNestedInput
     transactions?: TransactionUpdateManyWithoutCompanyNestedInput
     incomingTransfers?: TransactionUpdateManyWithoutDestinationCompanyNestedInput
   }
@@ -13316,6 +14743,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     users?: UserCompanyAccessUncheckedUpdateManyWithoutCompanyNestedInput
+    paymentModes?: CompanyPaymentModeMappingUncheckedUpdateManyWithoutCompanyNestedInput
     transactions?: TransactionUncheckedUpdateManyWithoutCompanyNestedInput
     incomingTransfers?: TransactionUncheckedUpdateManyWithoutDestinationCompanyNestedInput
   }
@@ -13355,6 +14783,126 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     transactions?: TransactionUncheckedUpdateManyWithoutLedgerNestedInput
+  }
+
+  export type CompanyCreateWithoutPaymentModesInput = {
+    id?: string
+    companyCode: string
+    name: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    users?: UserCompanyAccessCreateNestedManyWithoutCompanyInput
+    ledgers?: CompanyLedgerMappingCreateNestedManyWithoutCompanyInput
+    transactions?: TransactionCreateNestedManyWithoutCompanyInput
+    incomingTransfers?: TransactionCreateNestedManyWithoutDestinationCompanyInput
+  }
+
+  export type CompanyUncheckedCreateWithoutPaymentModesInput = {
+    id?: string
+    companyCode: string
+    name: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    users?: UserCompanyAccessUncheckedCreateNestedManyWithoutCompanyInput
+    ledgers?: CompanyLedgerMappingUncheckedCreateNestedManyWithoutCompanyInput
+    transactions?: TransactionUncheckedCreateNestedManyWithoutCompanyInput
+    incomingTransfers?: TransactionUncheckedCreateNestedManyWithoutDestinationCompanyInput
+  }
+
+  export type CompanyCreateOrConnectWithoutPaymentModesInput = {
+    where: CompanyWhereUniqueInput
+    create: XOR<CompanyCreateWithoutPaymentModesInput, CompanyUncheckedCreateWithoutPaymentModesInput>
+  }
+
+  export type PaymentModeCreateWithoutCompaniesInput = {
+    id?: string
+    name: string
+    category: string
+    isActive?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    transactions?: TransactionCreateNestedManyWithoutPaymentModeInput
+  }
+
+  export type PaymentModeUncheckedCreateWithoutCompaniesInput = {
+    id?: string
+    name: string
+    category: string
+    isActive?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    transactions?: TransactionUncheckedCreateNestedManyWithoutPaymentModeInput
+  }
+
+  export type PaymentModeCreateOrConnectWithoutCompaniesInput = {
+    where: PaymentModeWhereUniqueInput
+    create: XOR<PaymentModeCreateWithoutCompaniesInput, PaymentModeUncheckedCreateWithoutCompaniesInput>
+  }
+
+  export type CompanyUpsertWithoutPaymentModesInput = {
+    update: XOR<CompanyUpdateWithoutPaymentModesInput, CompanyUncheckedUpdateWithoutPaymentModesInput>
+    create: XOR<CompanyCreateWithoutPaymentModesInput, CompanyUncheckedCreateWithoutPaymentModesInput>
+    where?: CompanyWhereInput
+  }
+
+  export type CompanyUpdateToOneWithWhereWithoutPaymentModesInput = {
+    where?: CompanyWhereInput
+    data: XOR<CompanyUpdateWithoutPaymentModesInput, CompanyUncheckedUpdateWithoutPaymentModesInput>
+  }
+
+  export type CompanyUpdateWithoutPaymentModesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    companyCode?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    users?: UserCompanyAccessUpdateManyWithoutCompanyNestedInput
+    ledgers?: CompanyLedgerMappingUpdateManyWithoutCompanyNestedInput
+    transactions?: TransactionUpdateManyWithoutCompanyNestedInput
+    incomingTransfers?: TransactionUpdateManyWithoutDestinationCompanyNestedInput
+  }
+
+  export type CompanyUncheckedUpdateWithoutPaymentModesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    companyCode?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    users?: UserCompanyAccessUncheckedUpdateManyWithoutCompanyNestedInput
+    ledgers?: CompanyLedgerMappingUncheckedUpdateManyWithoutCompanyNestedInput
+    transactions?: TransactionUncheckedUpdateManyWithoutCompanyNestedInput
+    incomingTransfers?: TransactionUncheckedUpdateManyWithoutDestinationCompanyNestedInput
+  }
+
+  export type PaymentModeUpsertWithoutCompaniesInput = {
+    update: XOR<PaymentModeUpdateWithoutCompaniesInput, PaymentModeUncheckedUpdateWithoutCompaniesInput>
+    create: XOR<PaymentModeCreateWithoutCompaniesInput, PaymentModeUncheckedCreateWithoutCompaniesInput>
+    where?: PaymentModeWhereInput
+  }
+
+  export type PaymentModeUpdateToOneWithWhereWithoutCompaniesInput = {
+    where?: PaymentModeWhereInput
+    data: XOR<PaymentModeUpdateWithoutCompaniesInput, PaymentModeUncheckedUpdateWithoutCompaniesInput>
+  }
+
+  export type PaymentModeUpdateWithoutCompaniesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    category?: StringFieldUpdateOperationsInput | string
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    transactions?: TransactionUpdateManyWithoutPaymentModeNestedInput
+  }
+
+  export type PaymentModeUncheckedUpdateWithoutCompaniesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    category?: StringFieldUpdateOperationsInput | string
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    transactions?: TransactionUncheckedUpdateManyWithoutPaymentModeNestedInput
   }
 
   export type UserCompanyAccessCreateManyUserInput = {
@@ -13463,6 +15011,11 @@ export namespace Prisma {
     mappedAt?: Date | string
   }
 
+  export type CompanyPaymentModeMappingCreateManyCompanyInput = {
+    paymentModeId: string
+    mappedAt?: Date | string
+  }
+
   export type TransactionCreateManyCompanyInput = {
     id?: string
     voucherNo: string
@@ -13528,6 +15081,21 @@ export namespace Prisma {
 
   export type CompanyLedgerMappingUncheckedUpdateManyWithoutCompanyInput = {
     ledgerId?: StringFieldUpdateOperationsInput | string
+    mappedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type CompanyPaymentModeMappingUpdateWithoutCompanyInput = {
+    mappedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    paymentMode?: PaymentModeUpdateOneRequiredWithoutCompaniesNestedInput
+  }
+
+  export type CompanyPaymentModeMappingUncheckedUpdateWithoutCompanyInput = {
+    paymentModeId?: StringFieldUpdateOperationsInput | string
+    mappedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type CompanyPaymentModeMappingUncheckedUpdateManyWithoutCompanyInput = {
+    paymentModeId?: StringFieldUpdateOperationsInput | string
     mappedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -13808,6 +15376,11 @@ export namespace Prisma {
     updatedAt?: Date | string
   }
 
+  export type CompanyPaymentModeMappingCreateManyPaymentModeInput = {
+    companyId: string
+    mappedAt?: Date | string
+  }
+
   export type TransactionUpdateWithoutPaymentModeInput = {
     id?: StringFieldUpdateOperationsInput | string
     voucherNo?: StringFieldUpdateOperationsInput | string
@@ -13863,6 +15436,21 @@ export namespace Prisma {
     createdById?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type CompanyPaymentModeMappingUpdateWithoutPaymentModeInput = {
+    mappedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    company?: CompanyUpdateOneRequiredWithoutPaymentModesNestedInput
+  }
+
+  export type CompanyPaymentModeMappingUncheckedUpdateWithoutPaymentModeInput = {
+    companyId?: StringFieldUpdateOperationsInput | string
+    mappedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type CompanyPaymentModeMappingUncheckedUpdateManyWithoutPaymentModeInput = {
+    companyId?: StringFieldUpdateOperationsInput | string
+    mappedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
 

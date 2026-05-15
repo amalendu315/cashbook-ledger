@@ -37,6 +37,7 @@ model Company {
   // Relations
   users                UserCompanyAccess[]
   ledgers              CompanyLedgerMapping[] // Determines which ledgers are visible to this company
+  paymentModes         CompanyPaymentModeMapping[]
   
   // Transaction Relations
   transactions         Transaction[] @relation("CompanyTransactions")
@@ -86,6 +87,7 @@ model PaymentMode {
 
   // Relations
   transactions Transaction[]
+  companies    CompanyPaymentModeMapping[] // NEW: Companies where this mode is allowed
 }
 
 
@@ -164,4 +166,17 @@ model CompanyLedgerMapping {
   @@id([companyId, ledgerId])
   @@index([companyId])
   @@index([ledgerId])
+}
+
+model CompanyPaymentModeMapping {
+  companyId     String
+  paymentModeId String
+  company       Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  paymentMode   PaymentMode @relation(fields: [paymentModeId], references: [id], onDelete: Cascade)
+
+  mappedAt      DateTime @default(now())
+
+  @@id([companyId, paymentModeId])
+  @@index([companyId])
+  @@index([paymentModeId])
 }

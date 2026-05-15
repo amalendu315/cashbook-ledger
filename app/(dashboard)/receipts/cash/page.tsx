@@ -30,7 +30,6 @@ export default function CashReceiptPage() {
   const [companies, setCompanies] = useState<any[]>([]);
   const [ledgers, setLedgers] = useState<any[]>([]);
   const [paymentModes, setPaymentModes] = useState<any[]>([]);
-  const [paymentModeId, setPaymentModeId] = useState("");
 
   // Form State
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -56,33 +55,41 @@ export default function CashReceiptPage() {
       setReceipts(data.transactions);
       setCompanies(data.companies);
       setLedgers(data.ledgers);
-      setPaymentModes(data.paymentModes); // Set payment modes in state
+      setPaymentModes(data.paymentModes); 
 
       // Set defaults for form if data exists and we aren't editing
       if (!editingId) {
+        const defaultCompanyId = data.companies.length > 0 ? data.companies[0].id : "";
+        const initialValidModes = data.paymentModes.filter((pm: any) => {
+          if (!pm.companies || pm.companies.length === 0) return true;
+          return pm.companies.some((c: any) => c.companyId === defaultCompanyId);
+        });
+
         setFormData((f) => ({
           ...f,
-          companyId: data.companies.length > 0 ? data.companies[0].id : "",
-          paymentModeId:
-            data.paymentModes?.length > 0 ? data.paymentModes[0].id : "",
+          companyId: defaultCompanyId,
+          paymentModeId: initialValidModes.length > 0 ? initialValidModes[0].id : "",
         }));
       }
     }
     setIsLoading(false);
   };
 
-  // <-- New handler for the Search button
   const handleSearch = (filters: TransactionFilters) => {
-    setActiveFilters(filters); // Save current filters
-    fetchData(filters); // Fetch filtered data
+    setActiveFilters(filters); 
+    fetchData(filters); 
   };
 
   // Derived state: Filter ledgers dynamically based on selected Company
   const availableLedgers = ledgers.filter((l) => {
-    // If the ledger has no mapped companies, it's globally available
     if (!l.companies || l.companies.length === 0) return true;
-    // Otherwise, check if it's explicitly assigned to the selected company
     return l.companies.some((c: any) => c.companyId === formData.companyId);
+  });
+
+  // Derived state: Filter payment modes dynamically based on selected Company
+  const availablePaymentModes = paymentModes.filter((pm) => {
+    if (!pm.companies || pm.companies.length === 0) return true;
+    return pm.companies.some((c: any) => c.companyId === formData.companyId);
   });
 
   const handleInputChange = (
@@ -95,16 +102,26 @@ export default function CashReceiptPage() {
     setFormData((prev) => {
       const newData = { ...prev, [name]: value };
 
-      // If the user changes the Company, we must validate the currently selected Ledger
+      // If the user changes the Company, we must validate currently selected Ledger & Mode
       if (name === "companyId") {
+        // Validate Ledger
         const newValidLedgers = ledgers.filter((l) => {
           if (!l.companies || l.companies.length === 0) return true;
           return l.companies.some((c: any) => c.companyId === value);
         });
 
-        // If the old ledger is not allowed for the new company, clear the ledger selection
         if (!newValidLedgers.some((l) => l.id === prev.ledgerId)) {
           newData.ledgerId = "";
+        }
+
+        // Validate Payment Mode
+        const newValidPaymentModes = paymentModes.filter((pm) => {
+          if (!pm.companies || pm.companies.length === 0) return true;
+          return pm.companies.some((c: any) => c.companyId === value);
+        });
+
+        if (!newValidPaymentModes.some((pm) => pm.id === prev.paymentModeId)) {
+          newData.paymentModeId = "";
         }
       }
 
@@ -114,12 +131,18 @@ export default function CashReceiptPage() {
 
   const openNewModal = () => {
     setEditingId(null);
+    const defaultCompanyId = companies.length > 0 ? companies[0].id : "";
+    const initialValidModes = paymentModes.filter((pm: any) => {
+      if (!pm.companies || pm.companies.length === 0) return true;
+      return pm.companies.some((c: any) => c.companyId === defaultCompanyId);
+    });
+
     setFormData({
-      companyId: "",
+      companyId: defaultCompanyId,
       amount: "",
       businessDate: new Date().toISOString().split("T")[0],
       ledgerId: "",
-      paymentModeId: paymentModes.length > 0 ? paymentModes[0].id : "",
+      paymentModeId: initialValidModes.length > 0 ? initialValidModes[0].id : "",
       remarks: "",
     });
     setIsModalOpen(true);
@@ -152,7 +175,6 @@ export default function CashReceiptPage() {
 
     setIsSaving(true);
 
-    // Pass the ledger name as the payee/particulars to satisfy the database schema
     const selectedLedger = ledgers.find((l) => l.id === formData.ledgerId);
     const ledgerName = selectedLedger
       ? selectedLedger.name || selectedLedger.ledger_name
@@ -403,15 +425,25 @@ export default function CashReceiptPage() {
                     name="paymentModeId"
                     value={formData.paymentModeId}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 font-semibold outline-none cursor-pointer"
+                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 font-semibold cursor-pointer outline-none disabled:bg-slate-50 disabled:cursor-not-allowed"
+                    disabled={!formData.companyId}
                   >
-                    <option value="">--- Select Mode ---</option>
-                    {paymentModes.map((pm) => (
+                    <option value="">
+                      {formData.companyId
+                        ? "--- Select Mode ---"
+                        : "--- Select Company First ---"}
+                    </option>
+                    {availablePaymentModes.map((pm) => (
                       <option key={pm.id} value={pm.id}>
                         {pm.name}
                       </option>
                     ))}
                   </select>
+                  {formData.companyId && availablePaymentModes.length === 0 && (
+                    <p className="text-xs text-rose-500 font-medium mt-1.5">
+                      No cash payment modes mapped to this property.
+                    </p>
+                  )}
                 </div>
 
                 <div>

@@ -22,12 +22,14 @@ export default function PaymentModeMasterPage() {
 
   // Data State
   const [paymentModes, setPaymentModes] = useState<any[]>([]);
+  const [companyOptions, setCompanyOptions] = useState<any[]>([]);
 
   // Form State
   const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [category, setCategory] = useState("CASH");
   const [isActive, setIsActive] = useState(true);
+  const [selectedCompanyIds, setSelectedCompanyIds] = useState<string[]>([]);
 
   useEffect(() => {
     fetchPaymentModes();
@@ -38,6 +40,7 @@ export default function PaymentModeMasterPage() {
     const res = await getPaymentModes();
     if (res.success) {
       setPaymentModes(res.data || []);
+      setCompanyOptions(res.companies || []);
     } else {
       alert("Failed to load payment modes");
     }
@@ -49,6 +52,7 @@ export default function PaymentModeMasterPage() {
     setName("");
     setCategory("CASH");
     setIsActive(true);
+    setSelectedCompanyIds([]);
     setIsModalOpen(false);
   };
 
@@ -57,7 +61,16 @@ export default function PaymentModeMasterPage() {
     setName(mode.name);
     setCategory(mode.category);
     setIsActive(mode.isActive);
+    setSelectedCompanyIds(mode.companyIds || []);
     setIsModalOpen(true);
+  };
+
+  const handleCompanyToggle = (companyId: string) => {
+    setSelectedCompanyIds((prev) =>
+      prev.includes(companyId)
+        ? prev.filter((id) => id !== companyId)
+        : [...prev, companyId],
+    );
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -69,6 +82,7 @@ export default function PaymentModeMasterPage() {
       name,
       category,
       isActive,
+      companyIds: selectedCompanyIds, // Pass the selected mappings
     };
 
     const res = await savePaymentMode(payload);
@@ -103,8 +117,8 @@ export default function PaymentModeMasterPage() {
           <div>
             <h1 className="text-2xl font-bold text-slate-900">Payment Modes</h1>
             <p className="text-slate-500 text-sm mt-1">
-              Manage transaction payment methods and their cash/bank
-              categorization.
+              Manage transaction payment methods and map them to specific
+              companies.
             </p>
           </div>
         </div>
@@ -127,6 +141,7 @@ export default function PaymentModeMasterPage() {
               <tr>
                 <th className="px-6 py-4">Mode Name</th>
                 <th className="px-6 py-4">Category</th>
+                <th className="px-6 py-4">Assigned Companies</th>
                 <th className="px-6 py-4">Status</th>
                 <th className="px-6 py-4 text-right">Actions</th>
               </tr>
@@ -134,13 +149,13 @@ export default function PaymentModeMasterPage() {
             <tbody className="divide-y divide-slate-100">
               {isLoading ? (
                 <tr>
-                  <td colSpan={4} className="text-center py-8 text-slate-400">
+                  <td colSpan={5} className="text-center py-8 text-slate-400">
                     Loading payment modes...
                   </td>
                 </tr>
               ) : paymentModes.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="text-center py-8 text-slate-400">
+                  <td colSpan={5} className="text-center py-8 text-slate-400">
                     No payment modes found. Add one to get started.
                   </td>
                 </tr>
@@ -163,6 +178,22 @@ export default function PaymentModeMasterPage() {
                       >
                         {mode.category}
                       </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div
+                        className="font-semibold text-slate-600 truncate max-w-62.5"
+                        title={mode.companyNames || "None"}
+                      >
+                        {mode.companyNames ? (
+                          mode.companyIds.length === companyOptions.length ? (
+                            "All Companies"
+                          ) : (
+                            mode.companyNames
+                          )
+                        ) : (
+                          <span className="text-rose-500">Unassigned</span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-1.5">
@@ -212,7 +243,7 @@ export default function PaymentModeMasterPage() {
       {/* Add/Edit Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
             <div className="flex justify-between items-center p-5 border-b border-slate-100 bg-slate-50/50">
               <h2 className="text-lg font-bold text-slate-900">
                 {editingId ? "Edit Payment Mode" : "New Payment Mode"}
@@ -225,7 +256,10 @@ export default function PaymentModeMasterPage() {
               </button>
             </div>
 
-            <form onSubmit={handleSave} className="p-5 space-y-4">
+            <form
+              onSubmit={handleSave}
+              className="flex-1 overflow-y-auto p-5 space-y-5 custom-scrollbar"
+            >
               <div>
                 <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">
                   Mode Name <span className="text-rose-500">*</span>
@@ -254,10 +288,58 @@ export default function PaymentModeMasterPage() {
                   <option value="BANK">BANK (Affects Bank Balance)</option>
                 </select>
                 <p className="text-[10px] text-slate-400 mt-1.5 font-medium leading-relaxed">
-                  Important: This category dictates which dashboard key
-                  performance indicators (Cash In/Out vs Bank In/Out) this
-                  payment mode will impact.
+                  Important: This dictates which dashboard KPI this payment mode
+                  impacts.
                 </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">
+                  Company Assignment
+                </label>
+                <div className="border border-slate-200 rounded-lg bg-slate-50 p-3 max-h-48 overflow-y-auto space-y-2">
+                  {companyOptions.map((company) => (
+                    <label
+                      key={company.id}
+                      className="flex items-center gap-3 cursor-pointer p-1.5 hover:bg-slate-100 rounded-md transition-colors"
+                    >
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500"
+                        checked={selectedCompanyIds.includes(company.id)}
+                        onChange={() => handleCompanyToggle(company.id)}
+                      />
+                      <span className="text-sm font-bold text-slate-700 select-none">
+                        {company.name}
+                      </span>
+                    </label>
+                  ))}
+                  {companyOptions.length === 0 && (
+                    <div className="text-xs text-slate-400 font-medium text-center py-2">
+                      No companies found. Create a company first.
+                    </div>
+                  )}
+                </div>
+                <div className="flex justify-between items-center mt-2">
+                  <p className="text-[10px] text-slate-400 font-medium">
+                    Select where this mode should be visible.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setSelectedCompanyIds(
+                        selectedCompanyIds.length === companyOptions.length
+                          ? []
+                          : companyOptions.map((c) => c.id),
+                      )
+                    }
+                    className="text-[11px] font-bold text-indigo-600 hover:text-indigo-800"
+                  >
+                    {selectedCompanyIds.length === companyOptions.length
+                      ? "Deselect All"
+                      : "Select All"}
+                  </button>
+                </div>
               </div>
 
               <div className="flex items-center gap-3 pt-2">

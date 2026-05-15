@@ -26,14 +26,40 @@ export async function getGroupReportData(
 
     // 1.5 Fetch Ledgers for the Dropdown filter (used by UI for cascaded selects)
     const allLedgers = await prisma.ledger.findMany({
+      where: {
+        isActive: true,
+        ...(isAdmin
+          ? {}
+          : {
+              OR: [
+                { companies: { none: {} } },
+                { companies: { some: { companyId: { in: userCompanyIds } } } },
+              ],
+            }),
+      },
       select: { id: true, ledger_name: true, groupId: true },
       orderBy: { ledger_name: "asc" },
     });
 
-    // 1.7 Fetch Payment Modes for the Dropdown filter
+    // 1.7 Fetch Payment Modes for the Dropdown filter with Company Assignments
     const paymentModes = await prisma.paymentMode.findMany({
-      where: { isActive: true },
-      select: { id: true, name: true, category: true },
+      where: {
+        isActive: true,
+        ...(isAdmin
+          ? {}
+          : {
+              OR: [
+                { companies: { none: {} } },
+                { companies: { some: { companyId: { in: userCompanyIds } } } },
+              ],
+            }),
+      },
+      select: {
+        id: true,
+        name: true,
+        category: true,
+        companies: { select: { companyId: true } },
+      },
       orderBy: { name: "asc" },
     });
 
@@ -196,7 +222,7 @@ export async function getGroupReportData(
     return {
       groups: allGroups,
       ledgers: allLedgers,
-      paymentModes, // Handing back Payment Modes to UI
+      paymentModes, // Handing back filtered Payment Modes to UI
       groupBalances,
       success: true,
     };

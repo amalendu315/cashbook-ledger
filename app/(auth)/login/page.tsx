@@ -45,9 +45,9 @@ export default function LoginPage() {
         <div className="h-14 w-14 bg-blue-50 flex items-center justify-center rounded-xl mb-4 border border-blue-100">
           <Building2 className="h-7 w-7 text-blue-600" />
         </div>
-        <h2 className="text-2xl font-bold text-slate-900">Enterprise Cashbook</h2>
+        <h2 className="text-2xl font-bold text-slate-900">Welcome Back!</h2>
         <p className="text-sm text-slate-500 mt-2 text-center">
-          Sign in to manage your property ledgers and transactions securely.
+          Sign in to manage your company details.
         </p>
       </div>
 

@@ -63,11 +63,21 @@ export default function FundTransferPage() {
 
       // Set default source hotel and payment mode
       if (data.userCompanies.length > 0 && !editingId) {
+        const defaultCompanyId = data.userCompanies[0].id;
+        const initialValidModes = (data.paymentModes || []).filter(
+          (pm: any) => {
+            if (!pm.companies || pm.companies.length === 0) return true;
+            return pm.companies.some(
+              (c: any) => c.companyId === defaultCompanyId,
+            );
+          },
+        );
+
         setFormData((f) => ({
           ...f,
-          companyId: data.userCompanies[0].id,
+          companyId: defaultCompanyId,
           paymentModeId:
-            data.paymentModes?.length > 0 ? data.paymentModes[0].id : "",
+            initialValidModes.length > 0 ? initialValidModes[0].id : "",
         }));
       }
     }
@@ -80,22 +90,53 @@ export default function FundTransferPage() {
     fetchData(filters); // Fetch filtered data
   };
 
+  // Derived state: Filter payment modes dynamically based on selected Company
+  const availablePaymentModes = paymentModes.filter((pm) => {
+    if (!pm.companies || pm.companies.length === 0) return true;
+    return pm.companies.some((c: any) => c.companyId === formData.companyId);
+  });
+
   const handleInputChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
     >,
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+
+    setFormData((prev) => {
+      const newData = { ...prev, [name]: value };
+
+      // Validate payment mode against the newly selected source company
+      if (name === "companyId") {
+        const newValidPaymentModes = paymentModes.filter((pm) => {
+          if (!pm.companies || pm.companies.length === 0) return true;
+          return pm.companies.some((c: any) => c.companyId === value);
+        });
+
+        if (!newValidPaymentModes.some((pm) => pm.id === prev.paymentModeId)) {
+          newData.paymentModeId = "";
+        }
+      }
+
+      return newData;
+    });
   };
 
   const openNewModal = () => {
     setEditingId(null);
+    const defaultCompanyId =
+      userCompanies.length > 0 ? userCompanies[0].id : "";
+    const initialValidModes = paymentModes.filter((pm: any) => {
+      if (!pm.companies || pm.companies.length === 0) return true;
+      return pm.companies.some((c: any) => c.companyId === defaultCompanyId);
+    });
+
     setFormData({
-      companyId: userCompanies.length > 0 ? userCompanies[0].id : "",
+      companyId: defaultCompanyId,
       destinationCompanyId: "",
       amount: "",
-      paymentModeId: paymentModes.length > 0 ? paymentModes[0].id : "",
+      paymentModeId:
+        initialValidModes.length > 0 ? initialValidModes[0].id : "",
       businessDate: new Date().toISOString().split("T")[0],
       remarks: "",
     });
@@ -374,15 +415,25 @@ export default function FundTransferPage() {
                     name="paymentModeId"
                     value={formData.paymentModeId}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500 font-semibold cursor-pointer outline-none"
+                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500 font-semibold cursor-pointer outline-none disabled:bg-slate-50 disabled:cursor-not-allowed"
+                    disabled={!formData.companyId}
                   >
-                    <option value="">--- Select Mode ---</option>
-                    {paymentModes.map((pm) => (
+                    <option value="">
+                      {formData.companyId
+                        ? "--- Select Mode ---"
+                        : "--- Select Source First ---"}
+                    </option>
+                    {availablePaymentModes.map((pm) => (
                       <option key={pm.id} value={pm.id}>
                         {pm.name}
                       </option>
                     ))}
                   </select>
+                  {formData.companyId && availablePaymentModes.length === 0 && (
+                    <p className="text-xs text-rose-500 font-medium mt-1.5">
+                      No cash payment modes mapped to this property.
+                    </p>
+                  )}
                 </div>
 
                 <div>

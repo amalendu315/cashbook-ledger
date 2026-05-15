@@ -5,7 +5,7 @@ import { Footer } from "@/components/layout/footer";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Login | Enterprise Cashbook",
+  title: "Login",
   description: "Modern financial management and cashbook application",
   manifest: "/manifest.json", // For PWA
 };
@@ -109,7 +109,7 @@ export default function AuthLayout({
             </div>
 
             {/* Title & Subtitle */}
-            <div className="text-center mt-4">
+            {/* <div className="text-center mt-4">
               <h1 className="text-4xl font-extrabold tracking-tight mb-4 text-white drop-shadow-lg">
                 Enterprise Cashbook
               </h1>
@@ -117,7 +117,7 @@ export default function AuthLayout({
                 Enterprise-grade financial management and seamless cashbook
                 operations tailored for premium properties.
               </p>
-            </div>
+            </div> */}
           </div>
         </div>
 
@@ -130,7 +130,7 @@ export default function AuthLayout({
       </div>
 
       {/* Footer attached at the bottom of the screen */}
-      <Footer />
+      {/* <Footer /> */}
     </div>
   );
 }

@@ -62,7 +62,8 @@ export async function getCompanyDashboard(
         type: tx.type.replace("_", " "),
         particulars: tx.particulars,
         ledgerName: tx.ledger?.ledger_name || "N/A",
-        mode: tx.paymentMode?.name || "Unknown", // <-- Safely extract name
+        mode: tx.paymentMode?.name || "Unknown", // Safely extract name
+        paymentCategory: tx.paymentMode?.category || "Unknown", // Added category mapping
         amount: tx.amount,
         flowType: isIn ? "in" : "out",
         user: tx.createdBy?.name || "System",
@@ -148,7 +149,8 @@ export async function getLedgerDashboard(
         type: tx.type.replace("_", " "),
         companyName: tx.company?.name || "N/A",
         particulars: tx.particulars,
-        mode: tx.paymentMode?.name || "Unknown", // <-- Safely extract name
+        mode: tx.paymentMode?.name || "Unknown", // Safely extract name
+        paymentCategory: tx.paymentMode?.category || "Unknown", // Added category mapping
         amount: tx.amount,
         flowType: isIn ? "in" : "out",
       };
@@ -186,6 +188,7 @@ export async function getTransactionDetails(id: string) {
           amount: 15000,
           particulars: "Grand Udaan Hotel - Event Booking",
           mode: "Cash",
+          paymentCategory: "CASH",
           remarks:
             "Received advance payment for the corporate summit. Cleared by manager.",
           companyName: "Grand Udaan Hotel",
@@ -220,7 +223,8 @@ export async function getTransactionDetails(id: string) {
         date: tx.businessDate.toISOString().split("T")[0],
         amount: tx.amount,
         particulars: tx.particulars,
-        mode: tx.paymentMode?.name || "Unknown", // <-- Safely extract name
+        mode: tx.paymentMode?.name || "Unknown", // Safely extract name
+        paymentCategory: tx.paymentMode?.category || "Unknown", // Added category mapping
         remarks: tx.remarks || "No remarks provided.",
         companyName: tx.company.name,
         ledgerName:
@@ -256,7 +260,8 @@ function mockCompanyData() {
           type: "CASH RECEIPT",
           particulars: "Room 101 Booking",
           ledgerName: "Room Revenue",
-          mode: "Cash",
+          mode: "Physical Cash",
+          paymentCategory: "CASH",
           amount: 45000,
           flowType: "in",
           user: "Admin",
@@ -268,7 +273,8 @@ function mockCompanyData() {
           type: "BANK PAYMENT",
           particulars: "Plumbing Repair",
           ledgerName: "Maintenance",
-          mode: "Bank",
+          mode: "HDFC Bank",
+          paymentCategory: "BANK",
           amount: 12000,
           flowType: "out",
           user: "Manager",
@@ -297,7 +303,8 @@ function mockLedgerData() {
           type: "CASH RECEIPT",
           companyName: "Grand Udaan Hotel",
           particulars: "Room 101 Booking",
-          mode: "Cash",
+          mode: "Physical Cash",
+          paymentCategory: "CASH",
           amount: 45000,
           flowType: "in",
         },
@@ -308,7 +315,8 @@ function mockLedgerData() {
           type: "BANK RECEIPT",
           companyName: "Udaan Olive",
           particulars: "Corporate Booking",
-          mode: "Bank",
+          mode: "SBI Transfer",
+          paymentCategory: "BANK",
           amount: 40000,
           flowType: "in",
         },

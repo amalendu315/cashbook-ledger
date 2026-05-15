@@ -52,9 +52,25 @@ export async function getBankPaymentData(filters?: FilterParams) {
       orderBy: { ledger_name: "asc" },
     });
 
+    // 2.5 Fetch Bank Payment Modes and their Company Assignments
     const paymentModes = await prisma.paymentMode.findMany({
-      where: { isActive: true, category: "BANK" },
-      select: { id: true, name: true },
+      where: {
+        isActive: true,
+        category: "BANK",
+        ...(isAdmin
+          ? {}
+          : {
+              OR: [
+                { companies: { none: {} } },
+                { companies: { some: { companyId: { in: userCompanyIds } } } },
+              ],
+            }),
+      },
+      select: {
+        id: true,
+        name: true,
+        companies: { select: { companyId: true } },
+      },
       orderBy: { name: "asc" },
     });
 
@@ -118,7 +134,7 @@ export async function getBankPaymentData(filters?: FilterParams) {
           company: { select: { name: true } },
           ledger: { select: { ledger_name: true } },
           createdBy: { select: { name: true } },
-          paymentMode: { select: { name: true } },
+          paymentMode: { select: { name: true } }, // Include Payment Mode
         },
         orderBy: { businessDate: "desc" },
       });
@@ -145,7 +161,7 @@ export async function getBankPaymentData(filters?: FilterParams) {
       transactions: formattedTransactions,
       companies,
       ledgers,
-      paymentModes,
+      paymentModes, // Returned to frontend
     };
   } catch (error: any) {
     console.error("Error fetching bank payments:", error);
@@ -164,13 +180,23 @@ export async function getBankPaymentData(filters?: FilterParams) {
 export async function saveBankPayment(payload: any) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) throw new Error("Unauthorized");
+    if (!session?.user?.email)
+      throw new Error("Unauthorized: Session email missing.");
 
     if (!prisma.transaction)
       throw new Error("Database syncing. Please restart your Next.js server.");
 
-    if (!payload.paymentModeId) throw new Error("Payment Mode is required");
+    // SAFETY CHECK: Verify user ID using email to avoid foreign key constraints
+    const dbUser = await prisma.user.findUnique({
+      where: { email: session.user.email },
+      select: { id: true },
+    });
 
+    if (!dbUser) {
+      throw new Error("Database error: Could not verify user identity.");
+    }
+
+    if (!payload.paymentModeId) throw new Error("Payment Mode is required");
 
     const amountFloat = parseFloat(payload.amount);
     if (isNaN(amountFloat) || amountFloat <= 0)
@@ -188,7 +214,6 @@ export async function saveBankPayment(payload: any) {
           paymentModeId: payload.paymentModeId,
           amount: amountFloat,
           businessDate: bDate,
-          paymentMode: payload.paymentMode,
           particulars: payload.payee,
           remarks: payload.remarks,
         },
@@ -209,7 +234,7 @@ export async function saveBankPayment(payload: any) {
           businessDate: bDate,
           particulars: payload.payee,
           remarks: payload.remarks,
-          createdById: session.user.id,
+          createdById: dbUser.id, // Safe user ID mapping
         },
       });
     }
