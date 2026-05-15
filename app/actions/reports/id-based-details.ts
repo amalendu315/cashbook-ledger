@@ -39,7 +39,11 @@ export async function getCompanyDashboard(
         companyId,
         businessDate: { gte: from, lte: to },
       },
-      include: { ledger: true, createdBy: true },
+      include: {
+        ledger: true,
+        createdBy: true,
+        paymentMode: true, // <-- Included payment mode relation
+      },
       orderBy: { businessDate: "desc" },
     });
 
@@ -58,7 +62,7 @@ export async function getCompanyDashboard(
         type: tx.type.replace("_", " "),
         particulars: tx.particulars,
         ledgerName: tx.ledger?.ledger_name || "N/A",
-        mode: tx.paymentMode,
+        mode: tx.paymentMode?.name || "Unknown", // <-- Safely extract name
         amount: tx.amount,
         flowType: isIn ? "in" : "out",
         user: tx.createdBy?.name || "System",
@@ -121,7 +125,11 @@ export async function getLedgerDashboard(
         ledgerId,
         businessDate: { gte: from, lte: to },
       },
-      include: { company: true, createdBy: true },
+      include: {
+        company: true,
+        createdBy: true,
+        paymentMode: true, // <-- Included payment mode relation
+      },
       orderBy: { businessDate: "desc" },
     });
 
@@ -140,7 +148,7 @@ export async function getLedgerDashboard(
         type: tx.type.replace("_", " "),
         companyName: tx.company?.name || "N/A",
         particulars: tx.particulars,
-        mode: tx.paymentMode,
+        mode: tx.paymentMode?.name || "Unknown", // <-- Safely extract name
         amount: tx.amount,
         flowType: isIn ? "in" : "out",
       };
@@ -195,6 +203,7 @@ export async function getTransactionDetails(id: string) {
         ledger: true,
         createdBy: true,
         destinationCompany: true, // If it's a fund transfer
+        paymentMode: true, // <-- Included payment mode relation
       },
     });
 
@@ -211,7 +220,7 @@ export async function getTransactionDetails(id: string) {
         date: tx.businessDate.toISOString().split("T")[0],
         amount: tx.amount,
         particulars: tx.particulars,
-        mode: tx.paymentMode,
+        mode: tx.paymentMode?.name || "Unknown", // <-- Safely extract name
         remarks: tx.remarks || "No remarks provided.",
         companyName: tx.company.name,
         ledgerName:

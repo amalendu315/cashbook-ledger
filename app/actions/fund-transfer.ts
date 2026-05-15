@@ -1,4 +1,3 @@
-// app/actions/fund-transfer.ts
 "use server";
 
 import { prisma } from "@/lib/db";
@@ -34,6 +33,13 @@ export async function getFundTransferData(filters?: FilterParams) {
 
     // 2. Fetch ALL companies for the "To" dropdown (Users can transfer to any sister property)
     const allCompanies = await prisma.company.findMany({
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    });
+
+    // 2.5 Fetch Cash Payment Modes ONLY
+    const paymentModes = await prisma.paymentMode.findMany({
+      where: { isActive: true, category: "CASH" },
       select: { id: true, name: true },
       orderBy: { name: "asc" },
     });
@@ -94,6 +100,7 @@ export async function getFundTransferData(filters?: FilterParams) {
           company: { select: { name: true } },
           destinationCompany: { select: { name: true } },
           createdBy: { select: { name: true } },
+          paymentMode: { select: { name: true } }, // Include payment mode
         },
         orderBy: { businessDate: "desc" },
       });
@@ -106,7 +113,8 @@ export async function getFundTransferData(filters?: FilterParams) {
         to: t.destinationCompany?.name || "Unknown Destination",
         toId: t.destinationCompanyId,
         amount: t.amount,
-        mode: t.paymentMode || "Bank Transfer", // Capture the payment mode
+        paymentModeId: t.paymentModeId,
+        mode: t.paymentMode?.name || "Cash", // Map correctly to UI table
         bDate: t.businessDate.toISOString().split("T")[0],
         note: t.remarks || "-",
         user: t.createdBy?.name || "System",
@@ -117,6 +125,7 @@ export async function getFundTransferData(filters?: FilterParams) {
       transactions: formattedTransactions,
       userCompanies,
       allCompanies,
+      paymentModes, // Returned to frontend
       success: true,
     };
   } catch (error: any) {
@@ -125,6 +134,7 @@ export async function getFundTransferData(filters?: FilterParams) {
       transactions: [],
       userCompanies: [],
       allCompanies: [],
+      paymentModes: [],
       success: false,
       error: error.message,
     };
@@ -135,10 +145,23 @@ export async function getFundTransferData(filters?: FilterParams) {
 export async function saveFundTransfer(payload: any) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) throw new Error("Unauthorized");
+    if (!session?.user?.email)
+      throw new Error("Unauthorized: Session email missing.");
 
     if (!prisma.transaction)
       throw new Error("Database syncing. Please restart your Next.js server.");
+
+    // SAFETY CHECK: Verify user ID using email to avoid foreign key constraints
+    const dbUser = await prisma.user.findUnique({
+      where: { email: session.user.email },
+      select: { id: true },
+    });
+
+    if (!dbUser) {
+      throw new Error("Database error: Could not verify user identity.");
+    }
+
+    if (!payload.paymentModeId) throw new Error("Payment Mode is required");
 
     const amountFloat = parseFloat(payload.amount);
     if (isNaN(amountFloat) || amountFloat <= 0)
@@ -159,7 +182,7 @@ export async function saveFundTransfer(payload: any) {
           destinationCompanyId: payload.destinationCompanyId,
           amount: amountFloat,
           businessDate: bDate,
-          paymentMode: payload.paymentMode, // Save updated payment mode
+          paymentModeId: payload.paymentModeId, // Save updated payment mode relation
           remarks: payload.remarks,
         },
       });
@@ -171,14 +194,14 @@ export async function saveFundTransfer(payload: any) {
         data: {
           voucherNo,
           type: "FUND_TRANSFER",
-          paymentMode: payload.paymentMode || "Bank Transfer",
+          paymentModeId: payload.paymentModeId,
           companyId: payload.companyId,
           destinationCompanyId: payload.destinationCompanyId,
           amount: amountFloat,
           businessDate: bDate,
           particulars: "Internal Fund Transfer",
           remarks: payload.remarks,
-          createdById: session.user.id,
+          createdById: dbUser.id, // Safe DB User mapping
         },
       });
     }
