@@ -16,12 +16,12 @@ export default function LoginPage() {
     setErrorMsg("");
 
     const formData = new FormData(e.currentTarget);
-    const email = formData.get("email") as string;
+    const name = formData.get("name") as string;
     const password = formData.get("password") as string;
 
     try {
       const res = await signIn("credentials", {
-        email,
+        name,
         password,
         redirect: false, // Prevent NextAuth from automatically refreshing the page
       });
@@ -54,14 +54,14 @@ export default function LoginPage() {
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
           <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-            Email Address
+            Name
           </label>
           <input
-            type="email"
-            name="email"
+            type="text"
+            name="name"
             required
             className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white outline-none transition-all text-sm"
-            placeholder="admin@udaan.com"
+            placeholder="Admin"
           />
         </div>
 

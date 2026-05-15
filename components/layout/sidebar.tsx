@@ -39,6 +39,7 @@ type NavigationItem = NavItem | NavGroup;
 // --- Navigation Configuration ---
 const navigation: NavigationItem[] = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { name: "Fund Transfer", href: "/fund-transfer", icon: ArrowRightLeft },
   {
     name: "Masters",
     isGroup: true,
@@ -47,19 +48,28 @@ const navigation: NavigationItem[] = [
       { name: "Group Master", href: "/masters/group", icon: FolderTree },
       { name: "Company Master", href: "/masters/company", icon: Building2 },
       { name: "Ledger Master", href: "/masters/ledger", icon: BookOpen },
-      { name: "Payment Mode Master", href: "/masters/payment-mode", icon: MessageSquareCheck },
+      {
+        name: "Payment Mode Master",
+        href: "/masters/payment-mode",
+        icon: MessageSquareCheck,
+      },
       { name: "User Management", href: "/user-management", icon: Users },
     ],
   },
   {
-    name: "Transactions",
+    name: "Receipts",
     isGroup: true,
     children: [
       { name: "Cash Receipt", href: "/receipts/cash", icon: ArrowDownToLine },
-      { name: "Cash Payment", href: "/payments/cash", icon: ArrowUpFromLine },
       { name: "Bank Receipt", href: "/receipts/bank", icon: Landmark },
+    ],
+  },
+  {
+    name: "Payments",
+    isGroup: true,
+    children: [
+      { name: "Cash Payment", href: "/payments/cash", icon: ArrowUpFromLine },
       { name: "Bank Payment", href: "/payments/bank", icon: Landmark },
-      { name: "Fund Transfer", href: "/fund-transfer", icon: ArrowRightLeft },
     ],
   },
   {

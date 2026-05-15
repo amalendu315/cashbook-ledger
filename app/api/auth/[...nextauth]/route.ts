@@ -1,6 +1,6 @@
 import NextAuth, { AuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import {prisma} from "@/lib/db";
+import { prisma } from "@/lib/db";
 import bcrypt from "bcryptjs";
 
 export const authOptions: AuthOptions = {
@@ -8,17 +8,18 @@ export const authOptions: AuthOptions = {
     CredentialsProvider({
       name: "Credentials",
       credentials: {
-        email: { label: "Email", type: "email" },
+        name: { label: "Name", type: "text", placeholder: "Enter your name" },
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error("Email and password are required");
+        if (!credentials?.name || !credentials?.password) {
+          throw new Error("Name and password are required");
         }
 
         // Fetch user and their property mappings from the database
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
+        // We use findFirst because 'name' is not strictly @unique in schema.prisma
+        const user = await prisma.user.findFirst({
+          where: { name: credentials.name },
           include: { companyAccess: true },
         });
 

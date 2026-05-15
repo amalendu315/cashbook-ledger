@@ -143,6 +143,97 @@ export async function getDashboardData(dateStr: string, companyIdStr: string) {
     const closingBalance = openingBalance + cashIn - cashOut;
     const allRelevantTxns = Array.from(uniqueTxns.values());
 
+    // --- NEW: Calculate Group Balances (Only for ADMIN) ---
+    let groupBalances: any[] = [];
+    if (isAdmin) {
+      const allGroups = await prisma.group.findMany({
+        select: { id: true, name: true },
+      });
+      const groupMap = new Map();
+      allGroups.forEach((g) =>
+        groupMap.set(g.id, {
+          id: g.id,
+          name: g.name,
+          opening: 0,
+          in: 0,
+          out: 0,
+          closing: 0,
+        }),
+      );
+      groupMap.set("UNASSIGNED", {
+        id: "UNASSIGNED",
+        name: "Unassigned / General",
+        opening: 0,
+        in: 0,
+        out: 0,
+        closing: 0,
+      });
+
+      // Fetch all past transactions to calculate the exact opening per group
+      const pastGroupTxns = await prisma.transaction.findMany({
+        where: {
+          businessDate: { lt: startOfDay },
+          ...companyFilter,
+          ...cashCondition,
+        },
+        include: { ledger: true },
+      });
+
+      pastGroupTxns.forEach((t) => {
+        const gId = t.ledger?.groupId || "UNASSIGNED";
+        if (!groupMap.has(gId)) return;
+        const g = groupMap.get(gId);
+        if (t.type === "CASH_RECEIPT") g.opening += t.amount;
+        if (t.type === "CASH_PAYMENT" || t.type === "FUND_TRANSFER")
+          g.opening -= t.amount;
+      });
+
+      // Add past incoming transfers per group
+      if (Object.keys(destinationFilter).length > 0 || isAdmin) {
+        const pastGroupTransfersIn = await prisma.transaction.findMany({
+          where: {
+            businessDate: { lt: startOfDay },
+            type: "FUND_TRANSFER",
+            paymentModeId: { in: cashPaymentModeIds },
+            ...destinationFilter,
+          },
+          include: { ledger: true },
+        });
+        pastGroupTransfersIn.forEach((t) => {
+          const gId = t.ledger?.groupId || "UNASSIGNED";
+          if (!groupMap.has(gId)) return;
+          groupMap.get(gId).opening += t.amount;
+        });
+      }
+
+      // Add today's flows per group
+      todayOutgoing.forEach((t) => {
+        const gId = t.ledger?.groupId || "UNASSIGNED";
+        if (!groupMap.has(gId)) return;
+        const g = groupMap.get(gId);
+        if (t.type === "CASH_RECEIPT") g.in += t.amount;
+        if (t.type === "CASH_PAYMENT" || t.type === "FUND_TRANSFER")
+          g.out += t.amount;
+      });
+
+      todayIncomingTransfers.forEach((t) => {
+        const gId = t.ledger?.groupId || "UNASSIGNED";
+        if (!groupMap.has(gId)) return;
+        groupMap.get(gId).in += t.amount;
+      });
+
+      // Compile active groups
+      groupBalances = Array.from(groupMap.values())
+        .map((g) => {
+          g.closing = g.opening + g.in - g.out;
+          return g;
+        })
+        .filter(
+          (g) =>
+            g.opening !== 0 || g.in !== 0 || g.out !== 0 || g.closing !== 0,
+        );
+    }
+
     // 5. Generate Chart Data (Cash Only)
     const chartData = [
       { time: "08:00", "Cash In": 0, "Cash Out": 0 },
@@ -201,7 +292,7 @@ export async function getDashboardData(dateStr: string, companyIdStr: string) {
           amountOut: isPayment
             ? t.amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })
             : "-",
-          mode: t.paymentMode?.name || "Cash", // Now dynamically pulled from PaymentMode master!
+          mode: t.paymentMode?.name || "Cash",
           date: t.businessDate.toISOString().split("T")[0],
         };
       });
@@ -248,10 +339,12 @@ export async function getDashboardData(dateStr: string, companyIdStr: string) {
 
     return {
       success: true,
+      isAdmin,
       companies,
       kpis: { openingBalance, cashIn, cashOut, closingBalance },
       chartData,
       recentTransactions,
+      groupBalances, // Included for the Admin Overview UI
       alerts,
     };
   } catch (error: any) {

@@ -15,6 +15,7 @@ import {
   Wallet,
   FolderTree,
   Vault,
+  Layers,
 } from "lucide-react";
 import {
   AreaChart,
@@ -38,7 +39,9 @@ export default function DashboardPage() {
   const [selectedCompanyId, setSelectedCompanyId] = useState("ALL");
 
   // Data States
+  const [isAdmin, setIsAdmin] = useState(false);
   const [companies, setCompanies] = useState<any[]>([]);
+  const [groupBalances, setGroupBalances] = useState<any[]>([]);
   const [kpis, setKpis] = useState({
     openingBalance: 0,
     cashIn: 0,
@@ -58,7 +61,9 @@ export default function DashboardPage() {
     const data = await getDashboardData(selectedDate, selectedCompanyId);
 
     if (data.success) {
+      setIsAdmin(data.isAdmin || false);
       setCompanies(data.companies || []);
+      setGroupBalances(data.groupBalances || []);
       setKpis(
         data.kpis || {
           openingBalance: 0,
@@ -160,6 +165,76 @@ export default function DashboardPage() {
           trendLabel=""
         />
       </div>
+
+      {/* Admin Only: Group Balances Overview */}
+      {!isLoading && isAdmin && groupBalances.length > 0 && (
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div className="p-5 border-b border-slate-200 bg-slate-50/50 flex justify-between items-center">
+            <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+              <Layers className="h-5 w-5 text-blue-600" /> Group Balances
+              Overview
+            </h2>
+            <a
+              href="/reports/group"
+              className="text-sm font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 transition-colors"
+            >
+              Detailed Report <ChevronRight className="h-4 w-4" />
+            </a>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm whitespace-nowrap">
+              <thead className="bg-slate-50 text-slate-500 font-bold uppercase text-[11px] tracking-wider border-b border-slate-200">
+                <tr>
+                  <th className="px-5 py-4">Group Name</th>
+                  <th className="px-5 py-4 text-right">Opening (₹)</th>
+                  <th className="px-5 py-4 text-right">Cash In (₹)</th>
+                  <th className="px-5 py-4 text-right">Cash Out (₹)</th>
+                  <th className="px-5 py-4 text-right">Closing (₹)</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {groupBalances.map((g, i) => (
+                  <tr key={i} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-5 py-4 font-bold text-slate-900">
+                      {g.name}
+                    </td>
+                    <td className="px-5 py-4 text-right font-semibold text-slate-600">
+                      {g.opening.toLocaleString("en-IN", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </td>
+                    <td className="px-5 py-4 text-right font-extrabold text-emerald-600">
+                      {g.in > 0
+                        ? g.in.toLocaleString("en-IN", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })
+                        : "-"}
+                    </td>
+                    <td className="px-5 py-4 text-right font-extrabold text-rose-600">
+                      {g.out > 0
+                        ? g.out.toLocaleString("en-IN", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })
+                        : "-"}
+                    </td>
+                    <td
+                      className={`px-5 py-4 text-right font-black text-base ${g.closing >= 0 ? "text-blue-700" : "text-rose-700"}`}
+                    >
+                      {g.closing.toLocaleString("en-IN", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Main Dashboard Layout - 2 Columns */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
