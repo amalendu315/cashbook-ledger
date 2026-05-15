@@ -6,7 +6,8 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 export async function getLedgerReportData(
   companyId: string,
-  ledgerId: string, // NEW: Added Ledger Filter
+  ledgerId: string,
+  paymentModeId: string, // NEW: Payment Mode Filter
   fromDateStr: string,
   toDateStr: string,
 ) {
@@ -42,6 +43,13 @@ export async function getLedgerReportData(
       orderBy: { ledger_name: "asc" },
     });
 
+    // Fetch all active payment modes
+    const paymentModes = await prisma.paymentMode.findMany({
+      where: { isActive: true },
+      select: { id: true, name: true, category: true },
+      orderBy: { name: "asc" },
+    });
+
     // Determine the company filter
     let companyFilter = {};
     if (companyId && companyId !== "") {
@@ -57,6 +65,12 @@ export async function getLedgerReportData(
     let ledgerFilter = {};
     if (ledgerId && ledgerId !== "") {
       ledgerFilter = { ledgerId: ledgerId };
+    }
+
+    // Determine the payment mode filter
+    let pModeFilter = {};
+    if (paymentModeId && paymentModeId !== "") {
+      pModeFilter = { paymentModeId: paymentModeId };
     }
 
     const fromDate = new Date(fromDateStr);
@@ -96,7 +110,8 @@ export async function getLedgerReportData(
     const pastTxns = await prisma.transaction.findMany({
       where: {
         ...companyFilter,
-        ...ledgerFilter, // Apply specific ledger filter if selected
+        ...ledgerFilter,
+        ...pModeFilter, // Applied payment mode filter
         businessDate: { lt: fromDate },
       },
     });
@@ -119,6 +134,7 @@ export async function getLedgerReportData(
       const pastTransfersIn = await prisma.transaction.findMany({
         where: {
           ...pastTransfersInFilter,
+          ...pModeFilter, // Applied payment mode filter
           businessDate: { lt: fromDate },
         },
       });
@@ -129,7 +145,8 @@ export async function getLedgerReportData(
     const periodTxns = await prisma.transaction.findMany({
       where: {
         ...companyFilter,
-        ...ledgerFilter, // Apply specific ledger filter
+        ...ledgerFilter,
+        ...pModeFilter, // Applied payment mode filter
         businessDate: { gte: fromDate, lte: toDate },
       },
       include: {
@@ -137,6 +154,7 @@ export async function getLedgerReportData(
         createdBy: { select: { name: true } },
         destinationCompany: { select: { name: true } },
         company: { select: { name: true } },
+        paymentMode: true, // Include mode dynamically
       },
     });
 
@@ -145,12 +163,14 @@ export async function getLedgerReportData(
       periodTransfersIn = await prisma.transaction.findMany({
         where: {
           ...pastTransfersInFilter,
+          ...pModeFilter, // Applied payment mode filter
           businessDate: { gte: fromDate, lte: toDate },
         },
         include: {
           createdBy: { select: { name: true } },
           company: { select: { name: true } },
           destinationCompany: { select: { name: true } },
+          paymentMode: true, // Include mode dynamically
         },
       });
     }
@@ -174,7 +194,8 @@ export async function getLedgerReportData(
             : t.particulars || (t.ledger ? t.ledger.ledger_name : "General"),
         note: t.remarks || "-",
         amount: t.amount,
-        mode: t.paymentMode || "Cash",
+        mode: t.paymentMode?.name || "Unknown",
+        paymentCategory: t.paymentMode?.category || "Unknown", // Used by UI tabs
         flowType: t.type.includes("RECEIPT") ? "in" : "out",
         user: t.createdBy?.name || "System",
         attachment: !!t.attachmentUrl,
@@ -193,7 +214,8 @@ export async function getLedgerReportData(
         particulars: `Transfer From: ${t.company?.name || "Unknown"}`,
         note: t.remarks || "-",
         amount: t.amount,
-        mode: "Transfer",
+        mode: t.paymentMode?.name || "Unknown",
+        paymentCategory: t.paymentMode?.category || "Unknown",
         flowType: "in",
         user: t.createdBy?.name || "System",
         attachment: !!t.attachmentUrl,
@@ -208,6 +230,7 @@ export async function getLedgerReportData(
     return {
       companies,
       ledgers,
+      paymentModes,
       transactions: formattedTransactions,
       openingBalance,
       success: true,
@@ -217,6 +240,7 @@ export async function getLedgerReportData(
     return {
       companies: [],
       ledgers: [],
+      paymentModes: [],
       transactions: [],
       openingBalance: 0,
       success: false,

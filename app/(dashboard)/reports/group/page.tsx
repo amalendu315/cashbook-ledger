@@ -67,6 +67,7 @@ export default function GroupReportPage() {
   // Filters
   const [selectedGroupId, setSelectedGroupId] = useState("");
   const [selectedLedgerId, setSelectedLedgerId] = useState("");
+  const [selectedPaymentModeId, setSelectedPaymentModeId] = useState(""); // NEW: Payment Mode Filter
   const [fromDate, setFromDate] = useState(() => {
     const d = new Date();
     d.setDate(1);
@@ -77,6 +78,7 @@ export default function GroupReportPage() {
   // Data
   const [groups, setGroups] = useState<any[]>([]);
   const [allLedgers, setAllLedgers] = useState<any[]>([]);
+  const [paymentModes, setPaymentModes] = useState<any[]>([]);
   const [groupBalances, setGroupBalances] = useState<any[]>([]);
 
   useEffect(() => {
@@ -88,12 +90,14 @@ export default function GroupReportPage() {
     const data = await getGroupReportData(
       selectedGroupId,
       selectedLedgerId,
+      selectedPaymentModeId,
       fromDate,
       toDate,
     );
     if (data.success) {
       if (groups.length === 0) setGroups(data.groups || []);
       if (allLedgers.length === 0) setAllLedgers(data.ledgers || []);
+      if (paymentModes.length === 0) setPaymentModes(data.paymentModes || []);
       setGroupBalances(data.groupBalances || []);
       // Auto-expand first group if exists
       if (data.groupBalances?.length > 0) {
@@ -160,6 +164,10 @@ export default function GroupReportPage() {
     setIsExporting(false);
   };
 
+  // Group payment modes by category for cleaner dropdown UX
+  const cashModes = paymentModes.filter((pm) => pm.category === "CASH");
+  const bankModes = paymentModes.filter((pm) => pm.category === "BANK");
+
   return (
     <div className="space-y-6 bg-slate-50 min-h-screen">
       <PageHeader
@@ -184,7 +192,7 @@ export default function GroupReportPage() {
           <Filter className="h-4 w-4" /> Report Parameters
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 items-end">
           <div className="lg:col-span-1">
             <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase">
               Select Group
@@ -227,6 +235,37 @@ export default function GroupReportPage() {
 
           <div className="lg:col-span-1">
             <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase">
+              Payment Mode
+            </label>
+            <select
+              value={selectedPaymentModeId}
+              onChange={(e) => setSelectedPaymentModeId(e.target.value)}
+              className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+            >
+              <option value="">All Modes</option>
+              {cashModes.length > 0 && (
+                <optgroup label="Cash Modes">
+                  {cashModes.map((pm) => (
+                    <option key={pm.id} value={pm.id}>
+                      {pm.name}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+              {bankModes.length > 0 && (
+                <optgroup label="Bank Modes">
+                  {bankModes.map((pm) => (
+                    <option key={pm.id} value={pm.id}>
+                      {pm.name}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+            </select>
+          </div>
+
+          <div className="lg:col-span-1">
+            <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase">
               From Date
             </label>
             <div className="relative">
@@ -259,7 +298,7 @@ export default function GroupReportPage() {
             <button
               onClick={handleGenerate}
               disabled={isLoading}
-              className="w-full px-6 py-2.5 bg-slate-900 text-white rounded-lg text-sm font-bold shadow-sm hover:bg-slate-800 transition-colors flex items-center justify-center gap-2 disabled:opacity-70"
+              className="w-full lg:w-auto px-6 py-2.5 bg-slate-900 text-white rounded-lg text-sm font-bold shadow-sm hover:bg-slate-800 transition-colors flex items-center justify-center gap-2 disabled:opacity-70"
             >
               <Search className="h-4 w-4" />{" "}
               {isLoading ? "Loading..." : "Consolidate"}

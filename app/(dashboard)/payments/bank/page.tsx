@@ -34,13 +34,14 @@ export default function BankPaymentPage() {
   const [payments, setPayments] = useState<any[]>([]);
   const [companies, setCompanies] = useState<any[]>([]);
   const [ledgers, setLedgers] = useState<any[]>([]);
+  const [paymentModes, setPaymentModes] = useState<any[]>([]);
 
   // Form State
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     companyId: "",
     amount: "",
-    paymentMode: "Bank Transfer",
+    paymentModeId: "",
     businessDate: new Date().toISOString().split("T")[0],
     ledgerId: "",
     remarks: "",
@@ -60,9 +61,15 @@ export default function BankPaymentPage() {
       setPayments(data.transactions || []);
       setCompanies(data.companies || []);
       setLedgers(data.ledgers || []);
+      setPaymentModes(data.paymentModes || []);
 
       if (data.companies!.length > 0 && !editingId) {
-        setFormData((f) => ({ ...f, companyId: data.companies![0].id }));
+        setFormData((f) => ({
+          ...f,
+          companyId: data.companies![0].id,
+          paymentModeId:
+            data.paymentModes?.length > 0 ? data.paymentModes[0].id : "",
+        }));
       }
     }
     setIsLoading(false);
@@ -112,9 +119,9 @@ export default function BankPaymentPage() {
   const openNewModal = () => {
     setEditingId(null);
     setFormData({
-      companyId:"",
+      companyId: "",
       amount: "",
-      paymentMode: "Bank Transfer",
+      paymentModeId: paymentModes.length > 0 ? paymentModes[0].id : "",
       businessDate: new Date().toISOString().split("T")[0],
       ledgerId: "",
       remarks: "",
@@ -127,7 +134,7 @@ export default function BankPaymentPage() {
     setFormData({
       companyId: payment.hotelId,
       amount: payment.amount.toString(),
-      paymentMode: payment.mode,
+      paymentModeId: payment.paymentModeId || "",
       businessDate: payment.bDate,
       ledgerId: payment.ledgerId,
       remarks: payment.note !== "-" ? payment.note : "",
@@ -226,8 +233,7 @@ export default function BankPaymentPage() {
                 <th className="px-5 py-4">Voucher & Hotel</th>
                 <th className="px-5 py-4">Ledger Account</th>
                 <th className="px-5 py-4 text-right">Amount (₹)</th>
-                <th className="px-5 py-4">Mode</th>
-                <th className="px-5 py-4">Date</th>
+                <th className="px-5 py-4">Date & Mode</th>
                 <th className="px-5 py-4">Remarks</th>
                 <th className="px-5 py-4 text-center">Action</th>
               </tr>
@@ -276,13 +282,11 @@ export default function BankPaymentPage() {
                       })}
                     </td>
                     <td className="px-5 py-3">
-                      <span className="inline-flex px-2 py-1 bg-slate-100 border border-slate-200 rounded text-xs font-bold text-slate-700">
-                        {item.mode}
-                      </span>
-                    </td>
-                    <td className="px-5 py-3">
                       <div className="font-semibold text-slate-800 text-sm">
                         Biz: {formatDateDisplay(item.bDate)}
+                      </div>
+                      <div className="text-[10px] font-bold text-slate-400 mt-0.5 uppercase tracking-wide">
+                        {item.paymentModeName}
                       </div>
                     </td>
                     <td className="px-5 py-3">
@@ -415,17 +419,17 @@ export default function BankPaymentPage() {
                     Payment Mode <span className="text-rose-500">*</span>
                   </label>
                   <select
-                    name="paymentMode"
-                    value={formData.paymentMode}
+                    name="paymentModeId"
+                    value={formData.paymentModeId}
                     onChange={handleInputChange}
                     className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 font-semibold cursor-pointer outline-none"
                   >
-                    <option value="UPI">UPI / Wallet</option>
-                    <option value="Bank Transfer">
-                      Bank Transfer (NEFT/RTGS/IMPS)
-                    </option>
-                    <option value="Card">Credit/Debit Card</option>
-                    <option value="Cheque">Cheque</option>
+                    <option value="">--- Select Mode ---</option>
+                    {paymentModes.map((pm) => (
+                      <option key={pm.id} value={pm.id}>
+                        {pm.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
 

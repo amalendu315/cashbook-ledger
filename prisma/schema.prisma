@@ -75,6 +75,19 @@ model Ledger {
   transactions       Transaction[]          
 }
 
+model PaymentMode {
+  id          String   @id @default(cuid())
+  name        String   @unique // e.g., "Physical Cash", "NEFT", "RTGS", "UPI", "Cheque"
+  category    String   // "CASH" or "BANK" -> Crucial for determining which balance is affected
+  isActive    Boolean  @default(true)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  transactions Transaction[]
+}
+
 
 // --- CORE TRANSACTION MODEL ---
 
@@ -97,7 +110,8 @@ model Transaction {
 
   // Financial Data (Crucial for Cash vs Bank deduction logic)
   amount               Float
-  paymentMode          String   // "Cash" or "Bank" (Determines which balance is affected)
+   paymentModeId        String
+  paymentMode          PaymentMode @relation(fields: [paymentModeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   businessDate         DateTime
 
   // Descriptive Data
@@ -120,6 +134,7 @@ model Transaction {
   @@index([ledgerId])
   @@index([businessDate])
   @@index([type])
+  @@index([paymentModeId]) // New index for fast payment mode lookups
 }
 
 // --- MANY-TO-MANY JOIN TABLES ---

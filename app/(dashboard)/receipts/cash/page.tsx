@@ -29,6 +29,8 @@ export default function CashReceiptPage() {
   const [receipts, setReceipts] = useState<any[]>([]);
   const [companies, setCompanies] = useState<any[]>([]);
   const [ledgers, setLedgers] = useState<any[]>([]);
+  const [paymentModes, setPaymentModes] = useState<any[]>([]);
+  const [paymentModeId, setPaymentModeId] = useState("");
 
   // Form State
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -37,6 +39,7 @@ export default function CashReceiptPage() {
     amount: "",
     businessDate: new Date().toISOString().split("T")[0],
     ledgerId: "",
+    paymentModeId: "",
     remarks: "",
   });
 
@@ -53,10 +56,17 @@ export default function CashReceiptPage() {
       setReceipts(data.transactions);
       setCompanies(data.companies);
       setLedgers(data.ledgers);
+      setPaymentModes(data.paymentModes); // Set payment modes in state
 
       // Set defaults for form if data exists and we aren't editing
-      if (data.companies.length > 0 && !editingId)
-        setFormData((f) => ({ ...f, companyId: data.companies[0].id }));
+      if (!editingId) {
+        setFormData((f) => ({
+          ...f,
+          companyId: data.companies.length > 0 ? data.companies[0].id : "",
+          paymentModeId:
+            data.paymentModes?.length > 0 ? data.paymentModes[0].id : "",
+        }));
+      }
     }
     setIsLoading(false);
   };
@@ -105,10 +115,11 @@ export default function CashReceiptPage() {
   const openNewModal = () => {
     setEditingId(null);
     setFormData({
-      companyId:"",
+      companyId: "",
       amount: "",
       businessDate: new Date().toISOString().split("T")[0],
       ledgerId: "",
+      paymentModeId: paymentModes.length > 0 ? paymentModes[0].id : "",
       remarks: "",
     });
     setIsModalOpen(true);
@@ -121,15 +132,21 @@ export default function CashReceiptPage() {
       amount: receipt.amount.toString(),
       businessDate: receipt.bDate,
       ledgerId: receipt.ledgerId,
+      paymentModeId: receipt.paymentModeId || "",
       remarks: receipt.note !== "-" ? receipt.note : "",
     });
     setIsModalOpen(true);
   };
 
   const handleSave = async () => {
-    if (!formData.companyId || !formData.amount || !formData.ledgerId) {
+    if (
+      !formData.companyId ||
+      !formData.amount ||
+      !formData.ledgerId ||
+      !formData.paymentModeId
+    ) {
       return alert(
-        "Please fill in all required fields (Hotel, Ledger, and Amount).",
+        "Please fill in all required fields (Hotel, Ledger, Payment Mode, and Amount).",
       );
     }
 
@@ -217,7 +234,7 @@ export default function CashReceiptPage() {
                 <th className="px-5 py-4">Voucher & Hotel</th>
                 <th className="px-5 py-4">Ledger Account</th>
                 <th className="px-5 py-4 text-right">Amount (₹)</th>
-                <th className="px-5 py-4">Date</th>
+                <th className="px-5 py-4">Date & Mode</th>
                 <th className="px-5 py-4">Remarks</th>
                 <th className="px-5 py-4 text-center">Action</th>
               </tr>
@@ -268,6 +285,9 @@ export default function CashReceiptPage() {
                     <td className="px-5 py-3">
                       <div className="font-semibold text-slate-800 text-sm">
                         {formatDateDisplay(item.bDate)}
+                      </div>
+                      <div className="text-[10px] font-bold text-slate-400 mt-0.5 uppercase tracking-wide">
+                        {item.paymentModeName}
                       </div>
                     </td>
                     <td className="px-5 py-3">
@@ -336,9 +356,7 @@ export default function CashReceiptPage() {
                     onChange={handleInputChange}
                     className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 font-semibold outline-none cursor-pointer"
                   >
-                    <option value="">
-                      --- Select Company ---
-                    </option>
+                    <option value="">--- Select Company ---</option>
                     {companies.map((c) => (
                       <option key={c.id} value={c.id}>
                         {c.name}
@@ -375,6 +393,25 @@ export default function CashReceiptPage() {
                       No active ledgers are assigned to this property.
                     </p>
                   )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">
+                    Payment Mode <span className="text-rose-500">*</span>
+                  </label>
+                  <select
+                    name="paymentModeId"
+                    value={formData.paymentModeId}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 font-semibold outline-none cursor-pointer"
+                  >
+                    <option value="">--- Select Mode ---</option>
+                    {paymentModes.map((pm) => (
+                      <option key={pm.id} value={pm.id}>
+                        {pm.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>

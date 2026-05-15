@@ -11,6 +11,7 @@ import {
   ArrowDownToLine,
   ArrowUpFromLine,
   ArrowRightLeft,
+  MessageSquareCheck ,
   FileBarChart,
   Users,
   ChevronDown,
@@ -46,6 +47,7 @@ const navigation: NavigationItem[] = [
       { name: "Group Master", href: "/masters/group", icon: FolderTree },
       { name: "Company Master", href: "/masters/company", icon: Building2 },
       { name: "Ledger Master", href: "/masters/ledger", icon: BookOpen },
+      { name: "Payment Mode Master", href: "/masters/payment-mode", icon: MessageSquareCheck },
       { name: "User Management", href: "/user-management", icon: Users },
     ],
   },
@@ -112,7 +114,7 @@ export function Sidebar() {
               const isActiveGroup = item.children.some((child) =>
                 pathname.startsWith(child.href),
               );
-              const isOpen = openDropdowns[item.name] !== false; // Default open, unless toggled
+              const isOpen = openDropdowns[item.name] == false; // Default open, unless toggled
 
               return (
                 <div key={index} className="pt-2 pb-1">

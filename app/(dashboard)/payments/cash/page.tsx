@@ -25,12 +25,15 @@ const [activeFilters, setActiveFilters] = useState<TransactionFilters | null>(
 const [payments, setPayments] = useState<any[]>([]);
 const [companies, setCompanies] = useState<any[]>([]);
 const [ledgers, setLedgers] = useState<any[]>([]);
+const [paymentModes, setPaymentModes] = useState<any[]>([]);
+
 
 // Form State
 const [editingId, setEditingId] = useState<string | null>(null);
 const [formData, setFormData] = useState({
   companyId: "",
   amount: "",
+  paymentModeId: "",
   businessDate: new Date().toISOString().split("T")[0],
   ledgerId: "",
   remarks: "",
@@ -49,10 +52,16 @@ const fetchData = async (filters: TransactionFilters | null = null) => {
     setPayments(data.transactions || []);
     setCompanies(data.companies || []);
     setLedgers(data.ledgers || []);
+    setPaymentModes(data.paymentModes || []);
 
     // Set defaults for form if data exists and we aren't editing
     if (data.companies!.length > 0 && !editingId)
-      setFormData((f) => ({ ...f, companyId: data.companies![0].id }));
+      setFormData((f) => ({
+        ...f,
+        companyId: data.companies![0].id,
+        paymentModeId:
+          data.paymentModes?.length > 0 ? data.paymentModes[0].id : "",
+      }));
   }
   setIsLoading(false);
 };
@@ -98,8 +107,9 @@ const handleInputChange = (
 const openNewModal = () => {
   setEditingId(null);
   setFormData({
-    companyId:"",
+    companyId: "",
     amount: "",
+    paymentModeId: paymentModes.length > 0 ? paymentModes[0].id : "",
     businessDate: new Date().toISOString().split("T")[0],
     ledgerId: "",
     remarks: "",
@@ -112,6 +122,7 @@ const openEditModal = (payment: any) => {
   setFormData({
     companyId: payment.hotelId,
     amount: payment.amount.toString(),
+    paymentModeId: payment.paymentModeId || "",
     businessDate: payment.bDate,
     ledgerId: payment.ledgerId,
     remarks: payment.note !== "-" ? payment.note : "",
@@ -210,7 +221,7 @@ return (
               <th className="px-5 py-4">Voucher & Hotel</th>
               <th className="px-5 py-4">Ledger Account</th>
               <th className="px-5 py-4 text-right">Amount (₹)</th>
-              <th className="px-5 py-4">Date</th>
+              <th className="px-5 py-4">Date & Mode</th>
               <th className="px-5 py-4">Remarks</th>
               <th className="px-5 py-4 text-center">Action</th>
             </tr>
@@ -261,6 +272,9 @@ return (
                   <td className="px-5 py-3">
                     <div className="font-semibold text-slate-800 text-sm">
                       {formatDateDisplay(item.bDate)}
+                    </div>
+                    <div className="text-[10px] font-bold text-slate-400 mt-0.5 uppercase tracking-wide">
+                      {item.paymentModeName}
                     </div>
                   </td>
                   <td className="px-5 py-3">
@@ -329,9 +343,7 @@ return (
                   onChange={handleInputChange}
                   className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-rose-500 font-semibold outline-none cursor-pointer"
                 >
-                  <option value="">
-                    --- Select Company ---
-                  </option>
+                  <option value="">--- Select Company ---</option>
                   {companies.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name}
@@ -386,6 +398,25 @@ return (
                     className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-rose-500 font-extrabold text-rose-600 outline-none text-lg"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">
+                  Payment Mode <span className="text-rose-500">*</span>
+                </label>
+                <select
+                  name="paymentModeId"
+                  value={formData.paymentModeId}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-rose-500 font-semibold cursor-pointer outline-none"
+                >
+                  <option value="">--- Select Mode ---</option>
+                  {paymentModes.map((pm) => (
+                    <option key={pm.id} value={pm.id}>
+                      {pm.name}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>

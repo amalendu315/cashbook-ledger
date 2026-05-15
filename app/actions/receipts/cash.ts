@@ -53,6 +53,12 @@ export async function getCashReceiptData(filters?: FilterParams) {
       orderBy: { ledger_name: "asc" },
     });
 
+    const paymentModes = await prisma.paymentMode.findMany({
+      where: { isActive: true, category: "CASH" },
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    });
+
     // 3. Build the dynamic WHERE clause for Transactions
     const whereClause: any = {
       type: "CASH_RECEIPT",
@@ -113,6 +119,7 @@ export async function getCashReceiptData(filters?: FilterParams) {
           company: { select: { name: true } },
           ledger: { select: { ledger_name: true } },
           createdBy: { select: { name: true } },
+          paymentMode: { select: { name: true } }, // Included new relation
         },
         orderBy: { businessDate: "desc" },
       });
@@ -126,6 +133,8 @@ export async function getCashReceiptData(filters?: FilterParams) {
         bDate: t.businessDate.toISOString().split("T")[0],
         account: t.ledger?.ledger_name || "Uncategorized",
         ledgerId: t.ledgerId,
+        paymentModeId: t.paymentModeId,
+        paymentModeName: t.paymentMode?.name || "Cash",
         note: t.remarks || "-",
         user: t.createdBy?.name || "System",
       }));
@@ -135,6 +144,7 @@ export async function getCashReceiptData(filters?: FilterParams) {
       transactions: formattedTransactions,
       companies,
       ledgers,
+      paymentModes, // Returned to frontend
       success: true,
     };
   } catch (error: any) {
@@ -143,6 +153,7 @@ export async function getCashReceiptData(filters?: FilterParams) {
       transactions: [],
       companies: [],
       ledgers: [],
+      paymentModes: [],
       success: false,
       error: error.message,
     };
@@ -171,6 +182,7 @@ export async function saveCashReceipt(payload: any) {
         data: {
           companyId: payload.companyId,
           ledgerId: payload.ledgerId,
+          paymentModeId: payload.paymentModeId,
           amount: amountFloat,
           businessDate: bDate,
           particulars: payload.payee, // Populated via selected ledger name
@@ -186,7 +198,7 @@ export async function saveCashReceipt(payload: any) {
         data: {
           voucherNo,
           type: "CASH_RECEIPT",
-          paymentMode: "Cash",
+          paymentModeId: payload.paymentModeId,
           companyId: payload.companyId,
           ledgerId: payload.ledgerId,
           amount: amountFloat,

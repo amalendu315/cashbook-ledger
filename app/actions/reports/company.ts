@@ -6,6 +6,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 export async function getCompanyReportData(
   companyId: string,
+  paymentModeId: string,
   fromDateStr: string,
   toDateStr: string,
 ) {
@@ -24,8 +25,16 @@ export async function getCompanyReportData(
       orderBy: { name: "asc" },
     });
 
+    // Fetch all active payment modes
+    const paymentModes = await prisma.paymentMode.findMany({
+      where: { isActive: true },
+      select: { id: true, name: true, category: true },
+      orderBy: { name: "asc" },
+    });
+
     const emptyResponse = {
       companies,
+      paymentModes,
       companyName: "",
       companyCode: "",
       ledgerSummary: [],
@@ -59,19 +68,30 @@ export async function getCompanyReportData(
     const toDate = new Date(toDateStr);
     toDate.setHours(23, 59, 59, 999);
 
+    // Apply Payment Mode Filter if selected
+    const pModeFilter =
+      paymentModeId && paymentModeId !== "" ? { paymentModeId } : {};
+
     // 1. Calculate Opening Balances (All transactions strictly BEFORE fromDate)
     const pastTxns = await prisma.transaction.findMany({
-      where: { companyId: companyId, businessDate: { lt: fromDate } },
+      where: {
+        companyId: companyId,
+        businessDate: { lt: fromDate },
+        ...pModeFilter,
+      },
+      include: { paymentMode: true },
     });
     const pastTransfersIn = await prisma.transaction.findMany({
       where: {
         destinationCompanyId: companyId,
         businessDate: { lt: fromDate },
+        ...pModeFilter,
       },
       include: {
         createdBy: { select: { name: true } },
         company: { select: { name: true } },
         destinationCompany: { select: { name: true } },
+        paymentMode: true,
       },
     });
 
@@ -80,15 +100,8 @@ export async function getCompanyReportData(
     let bankOpening = 0;
 
     pastTxns.forEach((t: any) => {
-      const mode = (t.paymentMode || "").toLowerCase();
-      const isCash =
-        t.type.includes("CASH") ||
-        ((t.type === "FUND_TRANSFER" || t.type === "TRANSFER_IN") &&
-          mode === "cash");
-      const isBank =
-        t.type.includes("BANK") ||
-        ((t.type === "FUND_TRANSFER" || t.type === "TRANSFER_IN") &&
-          mode !== "cash");
+      const isCash = t.paymentMode?.category === "CASH";
+      const isBank = t.paymentMode?.category === "BANK";
 
       if (t.type.includes("RECEIPT")) {
         openingBalance += t.amount;
@@ -103,10 +116,10 @@ export async function getCompanyReportData(
 
     pastTransfersIn.forEach((t: any) => {
       openingBalance += t.amount;
-      const mode = (t.paymentMode || "").toLowerCase();
-      const isCash = mode === "cash";
+      const isCash = t.paymentMode?.category === "CASH";
+
       if (isCash) cashOpening += t.amount;
-      else bankOpening += t.amount;
+      else bankOpening += t.amount; // Defaults non-cash transfers to Bank
     });
 
     // 2. Fetch Transactions for the Selected Period
@@ -114,11 +127,13 @@ export async function getCompanyReportData(
       where: {
         companyId: companyId,
         businessDate: { gte: fromDate, lte: toDate },
+        ...pModeFilter,
       },
       include: {
         ledger: true,
         createdBy: { select: { name: true } },
-        destinationCompany: { select: { name: true } }, // <-- ADD THIS
+        destinationCompany: { select: { name: true } },
+        paymentMode: true,
       },
     });
 
@@ -126,10 +141,12 @@ export async function getCompanyReportData(
       where: {
         destinationCompanyId: companyId,
         businessDate: { gte: fromDate, lte: toDate },
+        ...pModeFilter,
       },
       include: {
         createdBy: { select: { name: true } },
-        company: { select: { name: true } }, // <-- ADD THIS (The Sender)
+        company: { select: { name: true } },
+        paymentMode: true,
       },
     });
 
@@ -144,13 +161,8 @@ export async function getCompanyReportData(
 
     periodTxns.forEach((t: any) => {
       // --- KPI Aggregations ---
-      const mode = (t.paymentMode || "").toLowerCase();
-      const isCash =
-        t.type.includes("CASH") ||
-        (t.type === "FUND_TRANSFER" && mode === "cash");
-      const isBank =
-        t.type.includes("BANK") ||
-        (t.type === "FUND_TRANSFER" && mode !== "cash");
+      const isCash = t.paymentMode?.category === "CASH";
+      const isBank = t.paymentMode?.category === "BANK";
 
       if (t.type.includes("RECEIPT")) {
         totalIn += t.amount;
@@ -216,8 +228,8 @@ export async function getCompanyReportData(
         lData.net += t.amount;
 
         totalIn += t.amount;
-        const mode = (t.paymentMode || "").toLowerCase();
-        if (mode === "cash") cashIn += t.amount;
+        const isCash = t.paymentMode?.category === "CASH";
+        if (isCash) cashIn += t.amount;
         else bankIn += t.amount;
       });
     }
@@ -249,8 +261,8 @@ export async function getCompanyReportData(
           (t.type === "FUND_TRANSFER" ? "Fund Transfer" : "N/A"),
         note: t.remarks || "-",
         amount: t.amount,
-        mode:
-          t.paymentMode || (t.type.includes("CASH") ? "Cash" : "Bank Transfer"),
+        mode: t.paymentMode?.name || "Unknown",
+        paymentCategory: t.paymentMode?.category || "Unknown", // Used by UI to filter locally
         flowType: t.type.includes("RECEIPT") ? "in" : "out",
         user: t.createdBy?.name || "System",
       })),
@@ -270,7 +282,8 @@ export async function getCompanyReportData(
         ledgerName: "Fund Transfer",
         note: t.remarks || "-",
         amount: t.amount,
-        mode: t.paymentMode || "Bank Transfer",
+        mode: t.paymentMode?.name || "Unknown",
+        paymentCategory: t.paymentMode?.category || "Unknown",
         flowType: "in",
         user: t.createdBy?.name || "System",
       })),
@@ -278,6 +291,7 @@ export async function getCompanyReportData(
 
     return {
       companies,
+      paymentModes,
       companyName,
       companyCode,
       ledgerSummary,
@@ -304,6 +318,7 @@ export async function getCompanyReportData(
     console.error("Error generating company report:", error);
     return {
       companies: [],
+      paymentModes: [],
       companyName: "",
       companyCode: "",
       ledgerSummary: [],

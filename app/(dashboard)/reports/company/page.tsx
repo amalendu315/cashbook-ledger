@@ -42,6 +42,7 @@ export default function CompanyReportPage() {
 
   // Filters
   const [selectedCompanyId, setSelectedCompanyId] = useState("");
+  const [selectedPaymentModeId, setSelectedPaymentModeId] = useState("");
   const [fromDate, setFromDate] = useState(() => {
     const d = new Date();
     d.setDate(1);
@@ -51,26 +52,35 @@ export default function CompanyReportPage() {
 
   // Data
   const [data, setData] = useState<any>(null);
+  const [paymentModes, setPaymentModes] = useState<any[]>([]);
 
   useEffect(() => {
     fetchData();
   }, []);
 
-  // Reset pagination when searching or changing tabs
+  // Reset payment mode & pagination when switching tabs to avoid contradictory states
   useEffect(() => {
+    setSelectedPaymentModeId("");
     setCurrentPage(1);
-  }, [tableSearchQuery, activeTab]);
+  }, [activeTab, tableSearchQuery]);
 
   const fetchData = async () => {
     setIsLoading(true);
-    const res = await getCompanyReportData(selectedCompanyId, fromDate, toDate);
+    const res = await getCompanyReportData(
+      selectedCompanyId,
+      selectedPaymentModeId,
+      fromDate,
+      toDate,
+    );
     if (res.success) {
       if (!data?.companies?.length) {
         setData(res);
+        setPaymentModes(res.paymentModes || []);
         if (!selectedCompanyId && res.companies.length > 0) {
           setSelectedCompanyId(res.companies[0].id);
           const autoData = await getCompanyReportData(
             res.companies[0].id,
+            selectedPaymentModeId,
             fromDate,
             toDate,
           );
@@ -106,19 +116,8 @@ export default function CompanyReportPage() {
 
   // --- Filter Transactions based on Tab & Search ---
   const visibleTransactions = (data?.transactions || []).filter((tx: any) => {
-    const mode = (tx.mode || "").toLowerCase();
-    if (activeTab === "cash")
-      return (
-        tx.type.includes("CASH") ||
-        ((tx.type === "FUND_TRANSFER" || tx.type === "TRANSFER_IN") &&
-          mode === "cash")
-      );
-    if (activeTab === "bank")
-      return (
-        tx.type.includes("BANK") ||
-        ((tx.type === "FUND_TRANSFER" || tx.type === "TRANSFER_IN") &&
-          mode !== "cash")
-      );
+    if (activeTab === "cash") return tx.paymentCategory === "CASH";
+    if (activeTab === "bank") return tx.paymentCategory === "BANK";
     if (activeTab === "transfer")
       return tx.type === "FUND_TRANSFER" || tx.type === "TRANSFER_IN";
     return true;
@@ -200,6 +199,13 @@ export default function CompanyReportPage() {
     setIsExporting(false);
   };
 
+  // Determine available payment modes based on currently selected tab
+  const availablePaymentModes = paymentModes.filter((pm) => {
+    if (activeTab === "cash") return pm.category === "CASH";
+    if (activeTab === "bank") return pm.category === "BANK";
+    return true; // Overall and Transfer show all modes
+  });
+
   return (
     <div className="p-4 lg:p-8 space-y-6 max-w-7xl mx-auto bg-slate-50 min-h-screen">
       {/* Premium Header */}
@@ -224,7 +230,7 @@ export default function CompanyReportPage() {
         <div className="flex items-center gap-2 mb-4 text-blue-600 font-bold text-sm uppercase tracking-wider">
           <Filter className="h-4 w-4" /> Report Parameters
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 items-end">
           <div className="lg:col-span-1">
             <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase">
               Select Company
@@ -238,6 +244,23 @@ export default function CompanyReportPage() {
               {data?.companies?.map((c: any) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="lg:col-span-1">
+            <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase">
+              Payment Mode
+            </label>
+            <select
+              value={selectedPaymentModeId}
+              onChange={(e) => setSelectedPaymentModeId(e.target.value)}
+              className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+            >
+              <option value="">All Modes</option>
+              {availablePaymentModes.map((pm: any) => (
+                <option key={pm.id} value={pm.id}>
+                  {pm.name}
                 </option>
               ))}
             </select>
@@ -277,7 +300,7 @@ export default function CompanyReportPage() {
               className="w-full lg:w-auto px-6 py-2.5 bg-slate-900 text-white rounded-lg text-sm font-bold shadow-sm hover:bg-slate-800 transition-colors flex items-center justify-center gap-2 disabled:opacity-70"
             >
               <Search className="h-4 w-4" />{" "}
-              {isLoading ? "Loading..." : "Generate Report"}
+              {isLoading ? "Loading..." : "Generate"}
             </button>
           </div>
         </div>
@@ -531,7 +554,7 @@ export default function CompanyReportPage() {
                       </td>
                       <td className="px-5 py-3">
                         <span
-                          className={`inline-flex px-2 py-1 rounded text-xs font-bold ${row.mode.toLowerCase() === "cash" ? "bg-emerald-50 text-emerald-700 border border-emerald-100" : "bg-blue-50 text-blue-700 border border-blue-100"}`}
+                          className={`inline-flex px-2 py-1 rounded text-xs font-bold ${row.paymentCategory === "CASH" ? "bg-emerald-50 text-emerald-700 border border-emerald-100" : "bg-blue-50 text-blue-700 border border-blue-100"}`}
                         >
                           {row.mode}
                         </span>

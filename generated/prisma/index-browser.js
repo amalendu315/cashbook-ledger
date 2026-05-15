@@ -159,6 +159,15 @@ exports.Prisma.LedgerScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
+exports.Prisma.PaymentModeScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  category: 'category',
+  isActive: 'isActive',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
 exports.Prisma.TransactionScalarFieldEnum = {
   id: 'id',
   voucherNo: 'voucherNo',
@@ -167,7 +176,7 @@ exports.Prisma.TransactionScalarFieldEnum = {
   ledgerId: 'ledgerId',
   destinationCompanyId: 'destinationCompanyId',
   amount: 'amount',
-  paymentMode: 'paymentMode',
+  paymentModeId: 'paymentModeId',
   businessDate: 'businessDate',
   particulars: 'particulars',
   remarks: 'remarks',
@@ -207,6 +216,7 @@ exports.Prisma.ModelName = {
   Company: 'Company',
   Group: 'Group',
   Ledger: 'Ledger',
+  PaymentMode: 'PaymentMode',
   Transaction: 'Transaction',
   UserCompanyAccess: 'UserCompanyAccess',
   CompanyLedgerMapping: 'CompanyLedgerMapping'

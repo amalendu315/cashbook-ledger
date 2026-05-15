@@ -20,6 +20,13 @@ export async function getDashboardData(dateStr: string, companyIdStr: string) {
       orderBy: { name: "asc" },
     });
 
+    // 1.5 Fetch Cash Payment Mode IDs to enforce "Cash Only" dashboard dynamically
+    const cashPaymentModes = await prisma.paymentMode.findMany({
+      where: { category: "CASH", isActive: true },
+      select: { id: true },
+    });
+    const cashPaymentModeIds = cashPaymentModes.map((pm) => pm.id);
+
     // 2. Build our Database Filters
     const targetDate = new Date(dateStr);
     const startOfDay = new Date(targetDate.setHours(0, 0, 0, 0));
@@ -39,12 +46,9 @@ export async function getDashboardData(dateStr: string, companyIdStr: string) {
           : { destinationCompanyId: { in: userCompanyIds } }
         : { destinationCompanyId: companyIdStr };
 
-    // STRICT CASH CONDITIONS: Only include Cash Receipts, Cash Payments, and Cash Fund Transfers
+    // STRICT CASH CONDITIONS: Only include transactions linked to a "CASH" payment mode
     const cashCondition = {
-      OR: [
-        { type: { in: ["CASH_RECEIPT", "CASH_PAYMENT"] } },
-        { type: "FUND_TRANSFER", paymentMode: "Cash" },
-      ],
+      paymentModeId: { in: cashPaymentModeIds },
     };
 
     // 3. CALCULATE OPENING BALANCE (Historical Cash Transactions prior to startOfDay)
@@ -72,7 +76,7 @@ export async function getDashboardData(dateStr: string, companyIdStr: string) {
         where: {
           businessDate: { lt: startOfDay },
           type: "FUND_TRANSFER",
-          paymentMode: "Cash",
+          paymentModeId: { in: cashPaymentModeIds },
           ...destinationFilter,
         },
         _sum: { amount: true },
@@ -89,7 +93,12 @@ export async function getDashboardData(dateStr: string, companyIdStr: string) {
         ...companyFilter,
         ...cashCondition,
       },
-      include: { ledger: true, company: true, destinationCompany: true },
+      include: {
+        ledger: true,
+        company: true,
+        destinationCompany: true,
+        paymentMode: { select: { name: true } }, // Includes mode to show in list
+      },
     });
 
     let todayIncomingTransfers: any[] = [];
@@ -98,10 +107,15 @@ export async function getDashboardData(dateStr: string, companyIdStr: string) {
         where: {
           businessDate: { gte: startOfDay, lte: endOfDay },
           type: "FUND_TRANSFER",
-          paymentMode: "Cash",
+          paymentModeId: { in: cashPaymentModeIds },
           ...destinationFilter,
         },
-        include: { ledger: true, company: true, destinationCompany: true },
+        include: {
+          ledger: true,
+          company: true,
+          destinationCompany: true,
+          paymentMode: { select: { name: true } },
+        },
       });
     }
 
@@ -187,7 +201,7 @@ export async function getDashboardData(dateStr: string, companyIdStr: string) {
           amountOut: isPayment
             ? t.amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })
             : "-",
-          mode: "Cash", // Hardcoded since we filtered purely for cash
+          mode: t.paymentMode?.name || "Cash", // Now dynamically pulled from PaymentMode master!
           date: t.businessDate.toISOString().split("T")[0],
         };
       });

@@ -7,6 +7,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 export async function getGroupReportData(
   groupIdStr: string,
   ledgerIdStr: string,
+  paymentModeIdStr: string, // NEW: Payment Mode Filter
   fromDateStr: string,
   toDateStr: string,
 ) {
@@ -27,6 +28,13 @@ export async function getGroupReportData(
     const allLedgers = await prisma.ledger.findMany({
       select: { id: true, ledger_name: true, groupId: true },
       orderBy: { ledger_name: "asc" },
+    });
+
+    // 1.7 Fetch Payment Modes for the Dropdown filter
+    const paymentModes = await prisma.paymentMode.findMany({
+      where: { isActive: true },
+      select: { id: true, name: true, category: true },
+      orderBy: { name: "asc" },
     });
 
     // 2. Fetch User's allowed companies
@@ -51,12 +59,18 @@ export async function getGroupReportData(
     const ledgerFilter =
       ledgerIdStr && ledgerIdStr !== "" ? { ledgerId: ledgerIdStr } : {};
 
-    // 3. Fetch Transactions for the Allowed Companies in Period (Filtered by ledger if provided)
+    const pModeFilter =
+      paymentModeIdStr && paymentModeIdStr !== ""
+        ? { paymentModeId: paymentModeIdStr }
+        : {};
+
+    // 3. Fetch Transactions for the Allowed Companies in Period (Filtered by ledger & payment mode if provided)
     const periodTxns = await prisma.transaction.findMany({
       where: {
         companyId: { in: allowedCompanyIds },
         businessDate: { gte: fromDate, lte: toDate },
         ...ledgerFilter,
+        ...pModeFilter, // Applied Payment Mode Filter
       },
       include: { ledger: true, company: { select: { name: true } } },
     });
@@ -66,6 +80,7 @@ export async function getGroupReportData(
         destinationCompanyId: { in: allowedCompanyIds },
         businessDate: { gte: fromDate, lte: toDate },
         ...ledgerFilter,
+        ...pModeFilter, // Applied Payment Mode Filter
       },
       include: { ledger: true, destinationCompany: { select: { name: true } } },
     });
@@ -180,7 +195,8 @@ export async function getGroupReportData(
 
     return {
       groups: allGroups,
-      ledgers: allLedgers, // Sending all ledgers back to UI for filtering dropdown
+      ledgers: allLedgers,
+      paymentModes, // Handing back Payment Modes to UI
       groupBalances,
       success: true,
     };
@@ -189,6 +205,7 @@ export async function getGroupReportData(
     return {
       groups: [],
       ledgers: [],
+      paymentModes: [],
       groupBalances: [],
       success: false,
       error: error.message,

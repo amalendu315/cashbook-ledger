@@ -52,6 +52,12 @@ export async function getBankPaymentData(filters?: FilterParams) {
       orderBy: { ledger_name: "asc" },
     });
 
+    const paymentModes = await prisma.paymentMode.findMany({
+      where: { isActive: true, category: "BANK" },
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    });
+
     // 3. Build the dynamic WHERE clause for Transactions
     const whereClause: any = {
       type: "BANK_PAYMENT",
@@ -112,6 +118,7 @@ export async function getBankPaymentData(filters?: FilterParams) {
           company: { select: { name: true } },
           ledger: { select: { ledger_name: true } },
           createdBy: { select: { name: true } },
+          paymentMode: { select: { name: true } },
         },
         orderBy: { businessDate: "desc" },
       });
@@ -124,7 +131,8 @@ export async function getBankPaymentData(filters?: FilterParams) {
         ledgerId: t.ledgerId,
         account: t.ledger?.ledger_name || "N/A",
         amount: t.amount,
-        mode: t.paymentMode,
+        paymentModeId: t.paymentModeId,
+        paymentModeName: t.paymentMode?.name || "Bank Transfer",
         bDate: t.businessDate.toISOString().split("T")[0],
         note: t.remarks || "-",
         user: t.createdBy?.name || "System",
@@ -137,6 +145,7 @@ export async function getBankPaymentData(filters?: FilterParams) {
       transactions: formattedTransactions,
       companies,
       ledgers,
+      paymentModes,
     };
   } catch (error: any) {
     console.error("Error fetching bank payments:", error);
@@ -145,6 +154,7 @@ export async function getBankPaymentData(filters?: FilterParams) {
       transactions: [],
       companies: [],
       ledgers: [],
+      paymentModes: [],
       error: error.message,
     };
   }
@@ -159,6 +169,9 @@ export async function saveBankPayment(payload: any) {
     if (!prisma.transaction)
       throw new Error("Database syncing. Please restart your Next.js server.");
 
+    if (!payload.paymentModeId) throw new Error("Payment Mode is required");
+
+
     const amountFloat = parseFloat(payload.amount);
     if (isNaN(amountFloat) || amountFloat <= 0)
       throw new Error("Invalid amount");
@@ -172,6 +185,7 @@ export async function saveBankPayment(payload: any) {
         data: {
           companyId: payload.companyId,
           ledgerId: payload.ledgerId,
+          paymentModeId: payload.paymentModeId,
           amount: amountFloat,
           businessDate: bDate,
           paymentMode: payload.paymentMode,
@@ -188,7 +202,7 @@ export async function saveBankPayment(payload: any) {
         data: {
           voucherNo,
           type: "BANK_PAYMENT",
-          paymentMode: payload.paymentMode || "Bank Transfer",
+          paymentModeId: payload.paymentModeId,
           companyId: payload.companyId,
           ledgerId: payload.ledgerId,
           amount: amountFloat,
