@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
-export async function getDashboardData(dateStr: string, companyIdStr: string) {
+export async function getDashboardData(dateStr: string) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) throw new Error("Unauthorized access");
@@ -13,339 +13,123 @@ export async function getDashboardData(dateStr: string, companyIdStr: string) {
       session.user.role === "ADMIN" || session.user.companyIds.includes("ALL");
     const userCompanyIds = session.user.companyIds || [];
 
-    // 1. Fetch Allowed Companies for the Dropdown Filter
+    // 1. Fetch Allowed Companies
     const companies = await prisma.company.findMany({
       where: isAdmin ? {} : { id: { in: userCompanyIds } },
       select: { id: true, name: true },
       orderBy: { name: "asc" },
     });
 
-    // 1.5 Fetch Cash Payment Mode IDs to enforce "Cash Only" dashboard dynamically
+    // 2. Fetch Cash Payment Mode IDs to enforce "Cash Only" dashboard
     const cashPaymentModes = await prisma.paymentMode.findMany({
       where: { category: "CASH", isActive: true },
       select: { id: true },
     });
     const cashPaymentModeIds = cashPaymentModes.map((pm) => pm.id);
+    const cashCondition = { paymentModeId: { in: cashPaymentModeIds } };
 
-    // 2. Build our Database Filters
+    // 3. Build Global Filters
     const targetDate = new Date(dateStr);
     const startOfDay = new Date(targetDate.setHours(0, 0, 0, 0));
     const endOfDay = new Date(targetDate.setHours(23, 59, 59, 999));
+    const authorizedCompanyIds = companies.map((c) => c.id);
 
-    const companyFilter =
-      companyIdStr === "ALL"
-        ? isAdmin
-          ? {}
-          : { companyId: { in: userCompanyIds } }
-        : { companyId: companyIdStr };
-
-    const destinationFilter =
-      companyIdStr === "ALL"
-        ? isAdmin
-          ? {}
-          : { destinationCompanyId: { in: userCompanyIds } }
-        : { destinationCompanyId: companyIdStr };
-
-    // STRICT CASH CONDITIONS: Only include transactions linked to a "CASH" payment mode
-    const cashCondition = {
-      paymentModeId: { in: cashPaymentModeIds },
+    const companyFilter = { companyId: { in: authorizedCompanyIds } };
+    const destCompanyFilter = {
+      destinationCompanyId: { in: authorizedCompanyIds },
     };
 
-    // 3. CALCULATE OPENING BALANCE (Historical Cash Transactions prior to startOfDay)
-    const pastOutgoingGrouped = await prisma.transaction.groupBy({
-      by: ["type"],
+    // 4. Fetch All Relevant Transactions for Authorized Companies
+    const pastTxns = await prisma.transaction.findMany({
       where: {
         businessDate: { lt: startOfDay },
         ...companyFilter,
         ...cashCondition,
       },
-      _sum: { amount: true },
+      select: { companyId: true, type: true, amount: true },
     });
 
-    let pastCashIn = 0;
-    let pastCashOut = 0;
-
-    pastOutgoingGrouped.forEach((g) => {
-      if (g.type === "CASH_RECEIPT") pastCashIn += g._sum.amount || 0;
-      if (g.type === "CASH_PAYMENT") pastCashOut += g._sum.amount || 0;
-      if (g.type === "FUND_TRANSFER") pastCashOut += g._sum.amount || 0;
+    const pastTransfersIn = await prisma.transaction.findMany({
+      where: {
+        businessDate: { lt: startOfDay },
+        type: "FUND_TRANSFER",
+        ...destCompanyFilter,
+        ...cashCondition,
+      },
+      select: { destinationCompanyId: true, amount: true },
     });
 
-    if (Object.keys(destinationFilter).length > 0 || isAdmin) {
-      const pastIncomingTransfers = await prisma.transaction.aggregate({
-        where: {
-          businessDate: { lt: startOfDay },
-          type: "FUND_TRANSFER",
-          paymentModeId: { in: cashPaymentModeIds },
-          ...destinationFilter,
-        },
-        _sum: { amount: true },
-      });
-      pastCashIn += pastIncomingTransfers._sum.amount || 0;
-    }
-
-    const openingBalance = pastCashIn - pastCashOut;
-
-    // 4. FETCH TODAY'S CASH TRANSACTIONS
-    const todayOutgoing = await prisma.transaction.findMany({
+    const todayTxns = await prisma.transaction.findMany({
       where: {
         businessDate: { gte: startOfDay, lte: endOfDay },
         ...companyFilter,
         ...cashCondition,
       },
-      include: {
-        ledger: true,
-        company: true,
-        destinationCompany: true,
-        paymentMode: { select: { name: true } }, // Includes mode to show in list
+      select: { companyId: true, type: true, amount: true },
+    });
+
+    const todayTransfersIn = await prisma.transaction.findMany({
+      where: {
+        businessDate: { gte: startOfDay, lte: endOfDay },
+        type: "FUND_TRANSFER",
+        ...destCompanyFilter,
+        ...cashCondition,
       },
+      select: { destinationCompanyId: true, amount: true },
     });
 
-    let todayIncomingTransfers: any[] = [];
-    if (Object.keys(destinationFilter).length > 0 || isAdmin) {
-      todayIncomingTransfers = await prisma.transaction.findMany({
-        where: {
-          businessDate: { gte: startOfDay, lte: endOfDay },
-          type: "FUND_TRANSFER",
-          paymentModeId: { in: cashPaymentModeIds },
-          ...destinationFilter,
-        },
-        include: {
-          ledger: true,
-          company: true,
-          destinationCompany: true,
-          paymentMode: { select: { name: true } },
-        },
+    // 5. Build and Aggregate Stats Map per Company
+    const statsMap = new Map();
+    companies.forEach((c) => {
+      statsMap.set(c.id, {
+        id: c.id,
+        name: c.name,
+        openingBalance: 0,
+        cashIn: 0,
+        cashOut: 0,
+        closingBalance: 0,
       });
-    }
-
-    const uniqueTxns = new Map();
-    let cashIn = 0;
-    let cashOut = 0;
-
-    // Process outgoing/internal cash transactions
-    todayOutgoing.forEach((t) => {
-      uniqueTxns.set(t.id, t);
-      if (t.type === "CASH_RECEIPT") cashIn += t.amount;
-      if (t.type === "CASH_PAYMENT" || t.type === "FUND_TRANSFER") {
-        cashOut += t.amount;
-      }
     });
 
-    // Process incoming cash transfers
-    todayIncomingTransfers.forEach((t) => {
-      cashIn += t.amount;
-      if (!uniqueTxns.has(t.id)) {
-        uniqueTxns.set(t.id + "_in", { ...t, _isIncoming: true });
-      }
+    // Process Opening Balances
+    pastTxns.forEach((t) => {
+      const stats = statsMap.get(t.companyId);
+      if (!stats) return;
+      if (t.type.includes("RECEIPT")) stats.openingBalance += t.amount;
+      if (t.type.includes("PAYMENT") || t.type === "FUND_TRANSFER")
+        stats.openingBalance -= t.amount;
     });
 
-    const closingBalance = openingBalance + cashIn - cashOut;
-    const allRelevantTxns = Array.from(uniqueTxns.values());
-
-    // --- NEW: Calculate Group Balances (Only for ADMIN) ---
-    let groupBalances: any[] = [];
-    if (isAdmin) {
-      const allGroups = await prisma.group.findMany({
-        select: { id: true, name: true },
-      });
-      const groupMap = new Map();
-      allGroups.forEach((g) =>
-        groupMap.set(g.id, {
-          id: g.id,
-          name: g.name,
-          opening: 0,
-          in: 0,
-          out: 0,
-          closing: 0,
-        }),
-      );
-      groupMap.set("UNASSIGNED", {
-        id: "UNASSIGNED",
-        name: "Unassigned / General",
-        opening: 0,
-        in: 0,
-        out: 0,
-        closing: 0,
-      });
-
-      // Fetch all past transactions to calculate the exact opening per group
-      const pastGroupTxns = await prisma.transaction.findMany({
-        where: {
-          businessDate: { lt: startOfDay },
-          ...companyFilter,
-          ...cashCondition,
-        },
-        include: { ledger: true },
-      });
-
-      pastGroupTxns.forEach((t) => {
-        const gId = t.ledger?.groupId || "UNASSIGNED";
-        if (!groupMap.has(gId)) return;
-        const g = groupMap.get(gId);
-        if (t.type === "CASH_RECEIPT") g.opening += t.amount;
-        if (t.type === "CASH_PAYMENT" || t.type === "FUND_TRANSFER")
-          g.opening -= t.amount;
-      });
-
-      // Add past incoming transfers per group
-      if (Object.keys(destinationFilter).length > 0 || isAdmin) {
-        const pastGroupTransfersIn = await prisma.transaction.findMany({
-          where: {
-            businessDate: { lt: startOfDay },
-            type: "FUND_TRANSFER",
-            paymentModeId: { in: cashPaymentModeIds },
-            ...destinationFilter,
-          },
-          include: { ledger: true },
-        });
-        pastGroupTransfersIn.forEach((t) => {
-          const gId = t.ledger?.groupId || "UNASSIGNED";
-          if (!groupMap.has(gId)) return;
-          groupMap.get(gId).opening += t.amount;
-        });
-      }
-
-      // Add today's flows per group
-      todayOutgoing.forEach((t) => {
-        const gId = t.ledger?.groupId || "UNASSIGNED";
-        if (!groupMap.has(gId)) return;
-        const g = groupMap.get(gId);
-        if (t.type === "CASH_RECEIPT") g.in += t.amount;
-        if (t.type === "CASH_PAYMENT" || t.type === "FUND_TRANSFER")
-          g.out += t.amount;
-      });
-
-      todayIncomingTransfers.forEach((t) => {
-        const gId = t.ledger?.groupId || "UNASSIGNED";
-        if (!groupMap.has(gId)) return;
-        groupMap.get(gId).in += t.amount;
-      });
-
-      // Compile active groups
-      groupBalances = Array.from(groupMap.values())
-        .map((g) => {
-          g.closing = g.opening + g.in - g.out;
-          return g;
-        })
-        .filter(
-          (g) =>
-            g.opening !== 0 || g.in !== 0 || g.out !== 0 || g.closing !== 0,
-        );
-    }
-
-    // 5. Generate Chart Data (Cash Only)
-    const chartData = [
-      { time: "08:00", "Cash In": 0, "Cash Out": 0 },
-      { time: "11:00", "Cash In": 0, "Cash Out": 0 },
-      { time: "14:00", "Cash In": 0, "Cash Out": 0 },
-      { time: "17:00", "Cash In": 0, "Cash Out": 0 },
-      { time: "20:00", "Cash In": 0, "Cash Out": 0 },
-      { time: "23:00", "Cash In": 0, "Cash Out": 0 },
-    ];
-
-    allRelevantTxns.forEach((t) => {
-      const hour = t.createdAt.getHours();
-      let bucketIndex = 0;
-      if (hour >= 8 && hour < 11) bucketIndex = 0;
-      else if (hour >= 11 && hour < 14) bucketIndex = 1;
-      else if (hour >= 14 && hour < 17) bucketIndex = 2;
-      else if (hour >= 17 && hour < 20) bucketIndex = 3;
-      else if (hour >= 20 && hour < 23) bucketIndex = 4;
-      else bucketIndex = 5;
-
-      if (t.type === "CASH_RECEIPT" || t._isIncoming) {
-        chartData[bucketIndex]["Cash In"] += t.amount;
-      }
-      if (
-        t.type === "CASH_PAYMENT" ||
-        (!t._isIncoming && t.type === "FUND_TRANSFER")
-      ) {
-        chartData[bucketIndex]["Cash Out"] += t.amount;
-      }
+    pastTransfersIn.forEach((t) => {
+      const stats = statsMap.get(t.destinationCompanyId);
+      if (!stats) return;
+      stats.openingBalance += t.amount;
     });
 
-    // 6. Fetch Recent Activity (Cash Only)
-    const recentTransactions = allRelevantTxns
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-      .slice(0, 6)
-      .map((t) => {
-        const isReceipt = t.type === "CASH_RECEIPT" || t._isIncoming;
-        const isPayment =
-          t.type === "CASH_PAYMENT" ||
-          (!t._isIncoming && t.type === "FUND_TRANSFER");
+    // Process Today's In/Out Cash Flows
+    todayTxns.forEach((t) => {
+      const stats = statsMap.get(t.companyId);
+      if (!stats) return;
+      if (t.type.includes("RECEIPT")) stats.cashIn += t.amount;
+      if (t.type.includes("PAYMENT") || t.type === "FUND_TRANSFER")
+        stats.cashOut += t.amount;
+    });
 
-        let details =
-          t.particulars || (t.ledger ? t.ledger.ledger_name : "General");
-        if (t.type === "FUND_TRANSFER") {
-          if (t._isIncoming) details = `Cash received from ${t.company?.name}`;
-          else details = `Cash transferred to ${t.destinationCompany?.name}`;
-        }
+    todayTransfersIn.forEach((t) => {
+      const stats = statsMap.get(t.destinationCompanyId);
+      if (!stats) return;
+      stats.cashIn += t.amount;
+    });
 
-        return {
-          id: t.voucherNo,
-          type: t._isIncoming ? "CASH TRANSFER IN" : t.type.replace("_", " "),
-          details,
-          amountIn: isReceipt
-            ? t.amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })
-            : "-",
-          amountOut: isPayment
-            ? t.amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })
-            : "-",
-          mode: t.paymentMode?.name || "Cash",
-          date: t.businessDate.toISOString().split("T")[0],
-        };
-      });
-
-    // 7. System Alerts
-    const alerts = [];
-    let alertId = 1;
-
-    const highValueTxns = allRelevantTxns.filter(
-      (t) => t.amount >= 50000,
-    ).length;
-    if (highValueTxns > 0) {
-      alerts.push({
-        id: alertId++,
-        title: "High Value Cash Activity",
-        desc: `${highValueTxns} cash transaction(s) recorded over ₹50,000 today.`,
-        type: "info",
-        time: "Today",
-      });
-    }
-
-    const fundTransfers = todayOutgoing.filter(
-      (t) => t.type === "FUND_TRANSFER",
-    ).length;
-    if (fundTransfers > 0) {
-      alerts.push({
-        id: alertId++,
-        title: "Cash Transfers Executed",
-        desc: `${fundTransfers} internal cash transfer(s) occurred today.`,
-        type: "warning",
-        time: "Today",
-      });
-    }
-
-    if (alerts.length === 0) {
-      alerts.push({
-        id: alertId++,
-        title: "Cashbook Status Clear",
-        desc: "All physical cash flow is updated and stable.",
-        type: "success",
-        time: "Just now",
-      });
-    }
+    // Compute final closing balances
+    const companyStats = Array.from(statsMap.values()).map((s) => {
+      s.closingBalance = s.openingBalance + s.cashIn - s.cashOut;
+      return s;
+    });
 
     return {
       success: true,
-      isAdmin,
-      companies,
-      kpis: { openingBalance, cashIn, cashOut, closingBalance },
-      chartData,
-      recentTransactions,
-      groupBalances, // Included for the Admin Overview UI
-      alerts,
+      companyStats,
     };
   } catch (error: any) {
     console.error("Dashboard Data Error:", error);

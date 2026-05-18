@@ -30,9 +30,8 @@ export default function DashboardLayout({
 
           {/* Page Content & Footer Wrapper */}
           <main className="flex-1 overflow-y-auto flex flex-col">
-            <div className="flex-1 p-4 md:p-6 lg:p-8 max-w-7xl mx-auto w-full">
-              {children}
-            </div>
+            {/* REMOVED: max-w-7xl mx-auto to allow full width scaling */}
+            <div className="flex-1 p-4 md:p-6 lg:p-8 w-full">{children}</div>
 
             {/* Dashboard Footer */}
             <Footer />

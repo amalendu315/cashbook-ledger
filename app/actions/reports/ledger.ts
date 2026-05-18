@@ -6,8 +6,9 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 export async function getLedgerReportData(
   companyId: string,
+  groupId: string, // NEW: Group Filter
   ledgerId: string,
-  paymentModeId: string, // NEW: Payment Mode Filter
+  paymentModeId: string,
   fromDateStr: string,
   toDateStr: string,
 ) {
@@ -26,7 +27,13 @@ export async function getLedgerReportData(
       orderBy: { name: "asc" },
     });
 
-    // Fetch allowed ledgers for the dropdown
+    // NEW: Fetch all groups for the dropdown
+    const groups = await prisma.group.findMany({
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    });
+
+    // Fetch allowed ledgers for the dropdown (now returning groupId as well)
     const ledgers = await prisma.ledger.findMany({
       where: {
         isActive: true,
@@ -39,7 +46,7 @@ export async function getLedgerReportData(
               ],
             }),
       },
-      select: { id: true, ledger_name: true },
+      select: { id: true, ledger_name: true, groupId: true },
       orderBy: { ledger_name: "asc" },
     });
 
@@ -76,10 +83,12 @@ export async function getLedgerReportData(
       companyFilter = isAdmin ? {} : { companyId: { in: userCompanyIds } };
     }
 
-    // Determine the ledger filter
-    let ledgerFilter = {};
+    // Determine the ledger & group filters for transactions
+    let ledgerFilter: any = {};
     if (ledgerId && ledgerId !== "") {
       ledgerFilter = { ledgerId: ledgerId };
+    } else if (groupId && groupId !== "") {
+      ledgerFilter = { ledger: { groupId: groupId } }; // Fetch any transaction linked to a ledger in this group
     }
 
     // Determine the payment mode filter
@@ -98,14 +107,19 @@ export async function getLedgerReportData(
     }
 
     // 1. Calculate Base Opening Balance directly from the Ledger Master Models
-    let baseLedgerFilter: any = ledgerId ? { id: ledgerId } : {};
-    if (!ledgerId && !isAdmin) {
-      baseLedgerFilter = {
-        OR: [
-          { companies: { none: {} } },
-          { companies: { some: { companyId: { in: userCompanyIds } } } },
-        ],
-      };
+    let baseLedgerFilter: any = {};
+    if (ledgerId) {
+      baseLedgerFilter.id = ledgerId;
+    } else if (groupId) {
+      baseLedgerFilter.groupId = groupId;
+    }
+
+    // Combine with RBAC constraints
+    if (!isAdmin) {
+      baseLedgerFilter.OR = [
+        { companies: { none: {} } },
+        { companies: { some: { companyId: { in: userCompanyIds } } } },
+      ];
     }
 
     const ledgersForOB = await prisma.ledger.findMany({
@@ -114,7 +128,7 @@ export async function getLedgerReportData(
     let openingBalance = 0;
     ledgersForOB.forEach((l) => {
       // Dr is Positive (+), Cr is Negative (-) for standard tracking
-      if (l.openingBalanceType === "Dr") {
+      if (l.openingBalanceType === "Cr") {
         openingBalance -= l.openingBalance;
       } else {
         openingBalance += l.openingBalance;
@@ -137,7 +151,7 @@ export async function getLedgerReportData(
         openingBalance -= t.amount;
     });
 
-    // Add Fund Transfers IN to Opening Balance (Only if NOT filtering by a specific Ledger)
+    // Add Fund Transfers IN to Opening Balance (Only if NOT filtering by a specific Ledger or Group)
     const pastTransfersInFilter =
       companyId && companyId !== ""
         ? { destinationCompanyId: companyId }
@@ -145,7 +159,11 @@ export async function getLedgerReportData(
           ? {}
           : { destinationCompanyId: { in: userCompanyIds } };
 
-    if (!ledgerId && Object.keys(pastTransfersInFilter).length > 0) {
+    if (
+      !ledgerId &&
+      !groupId &&
+      Object.keys(pastTransfersInFilter).length > 0
+    ) {
       const pastTransfersIn = await prisma.transaction.findMany({
         where: {
           ...pastTransfersInFilter,
@@ -174,7 +192,11 @@ export async function getLedgerReportData(
     });
 
     let periodTransfersIn: any[] = [];
-    if (!ledgerId && Object.keys(pastTransfersInFilter).length > 0) {
+    if (
+      !ledgerId &&
+      !groupId &&
+      Object.keys(pastTransfersInFilter).length > 0
+    ) {
       periodTransfersIn = await prisma.transaction.findMany({
         where: {
           ...pastTransfersInFilter,
@@ -244,6 +266,7 @@ export async function getLedgerReportData(
 
     return {
       companies,
+      groups, // Returned for Group Dropdown
       ledgers,
       paymentModes,
       transactions: formattedTransactions,
@@ -254,6 +277,7 @@ export async function getLedgerReportData(
     console.error("Error generating ledger report:", error);
     return {
       companies: [],
+      groups: [],
       ledgers: [],
       paymentModes: [],
       transactions: [],

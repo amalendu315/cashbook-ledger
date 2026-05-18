@@ -39,7 +39,6 @@ type NavigationItem = NavItem | NavGroup;
 // --- Navigation Configuration ---
 const navigation: NavigationItem[] = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Fund Transfer", href: "/fund-transfer", icon: ArrowRightLeft },
   {
     name: "Masters",
     isGroup: true,
@@ -57,19 +56,15 @@ const navigation: NavigationItem[] = [
     ],
   },
   {
-    name: "Receipts",
+    name: "Transactions",
     isGroup: true,
     children: [
-      { name: "Cash Receipt", href: "/receipts/cash", icon: ArrowDownToLine },
-      { name: "Bank Receipt", href: "/receipts/bank", icon: Landmark },
-    ],
-  },
-  {
-    name: "Payments",
-    isGroup: true,
-    children: [
-      { name: "Cash Payment", href: "/payments/cash", icon: ArrowUpFromLine },
-      { name: "Bank Payment", href: "/payments/bank", icon: Landmark },
+      {
+        name: "New Transaction",
+        href: "/transactions",
+        icon: ArrowDownToLine,
+      },
+      { name: "Fund Transfer", href: "/fund-transfer", icon: ArrowRightLeft },
     ],
   },
   {
@@ -78,7 +73,7 @@ const navigation: NavigationItem[] = [
     children: [
       { name: "Company Report", href: "/reports/company", icon: FileBarChart },
       { name: "Ledger Report", href: "/reports/ledger", icon: FileBarChart },
-      { name: "Group Report", href: "/reports/group", icon: FileBarChart },
+      // { name: "Group Report", href: "/reports/group", icon: FileBarChart },
     ],
   },
 ];

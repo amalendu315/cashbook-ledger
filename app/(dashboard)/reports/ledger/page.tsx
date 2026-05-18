@@ -36,6 +36,7 @@ export default function LedgerReportPage() {
 
   // Filters
   const [selectedCompanyId, setSelectedCompanyId] = useState("");
+  const [selectedGroupId, setSelectedGroupId] = useState("");
   const [selectedLedgerId, setSelectedLedgerId] = useState("");
   const [selectedPaymentModeId, setSelectedPaymentModeId] = useState("");
   const [fromDate, setFromDate] = useState(() => {
@@ -47,6 +48,7 @@ export default function LedgerReportPage() {
 
   // Data
   const [companies, setCompanies] = useState<any[]>([]);
+  const [groups, setGroups] = useState<any[]>([]);
   const [ledgers, setLedgers] = useState<any[]>([]);
   const [paymentModes, setPaymentModes] = useState<any[]>([]);
   const [openingBalance, setOpeningBalance] = useState(0);
@@ -60,6 +62,16 @@ export default function LedgerReportPage() {
   useEffect(() => {
     setSelectedPaymentModeId("");
   }, [activeTab]);
+
+  // If Group changes, ensure the selected ledger belongs to the new group
+  useEffect(() => {
+    if (selectedGroupId && selectedLedgerId) {
+      const ledger = ledgers.find((l: any) => l.id === selectedLedgerId);
+      if (ledger && ledger.groupId !== selectedGroupId) {
+        setSelectedLedgerId("");
+      }
+    }
+  }, [selectedGroupId, ledgers, selectedLedgerId]);
 
   // If the company changes, ensure the selected payment mode is still valid for it
   useEffect(() => {
@@ -87,6 +99,7 @@ export default function LedgerReportPage() {
     setIsLoading(true);
     const data = await getLedgerReportData(
       selectedCompanyId,
+      selectedGroupId,
       selectedLedgerId,
       selectedPaymentModeId,
       fromDate,
@@ -94,6 +107,7 @@ export default function LedgerReportPage() {
     );
     if (data.success) {
       if (companies.length === 0) setCompanies(data.companies);
+      if (groups.length === 0) setGroups(data.groups || []);
       setLedgers(data.ledgers);
       setPaymentModes(data.paymentModes || []);
       setOpeningBalance(data.openingBalance);
@@ -216,6 +230,12 @@ export default function LedgerReportPage() {
     return true; // Overall and Transfer show all modes if no company is selected
   });
 
+  // Determine available ledgers based on the selected group
+  const availableLedgers = ledgers.filter((l: any) => {
+    if (selectedGroupId && l.groupId !== selectedGroupId) return false;
+    return true;
+  });
+
   return (
     <div className="space-y-6 print:m-0 print:p-0 bg-slate-50 min-h-screen">
       <PageHeader
@@ -240,7 +260,7 @@ export default function LedgerReportPage() {
           <Filter className="h-4 w-4" /> Report Parameters
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 items-end">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
           <div className="lg:col-span-1">
             <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase">
               Company
@@ -261,6 +281,24 @@ export default function LedgerReportPage() {
 
           <div className="lg:col-span-1">
             <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase">
+              Group
+            </label>
+            <select
+              value={selectedGroupId}
+              onChange={(e) => setSelectedGroupId(e.target.value)}
+              className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+            >
+              <option value="">All Groups</option>
+              {groups.map((g) => (
+                <option key={g.id} value={g.id}>
+                  {g.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="lg:col-span-1">
+            <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase">
               Specific Ledger
             </label>
             <select
@@ -269,7 +307,7 @@ export default function LedgerReportPage() {
               className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
             >
               <option value="">All Ledgers</option>
-              {ledgers.map((l) => (
+              {availableLedgers.map((l) => (
                 <option key={l.id} value={l.id}>
                   {l.ledger_name}
                 </option>
@@ -325,11 +363,12 @@ export default function LedgerReportPage() {
             </div>
           </div>
 
-          <div className="lg:col-span-1 flex items-center justify-end h-10.5">
+          {/* Search Button positioned to the far right on large screens */}
+          <div className="lg:col-span-1 lg:col-start-4 flex items-center justify-end h-10.5">
             <button
               onClick={handleGenerate}
               disabled={isLoading}
-              className="w-full lg:w-auto px-6 py-2.5 bg-slate-900 text-white rounded-lg text-sm font-bold shadow-sm hover:bg-slate-800 transition-colors flex items-center justify-center gap-2 disabled:opacity-70"
+              className="w-full px-6 py-2.5 bg-slate-900 text-white rounded-lg text-sm font-bold shadow-sm hover:bg-slate-800 transition-colors flex items-center justify-center gap-2 disabled:opacity-70"
             >
               <Search className="h-4 w-4" />{" "}
               {isLoading ? "Loading..." : "Load Ledger"}

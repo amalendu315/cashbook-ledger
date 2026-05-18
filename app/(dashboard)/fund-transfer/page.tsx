@@ -228,7 +228,7 @@ export default function FundTransferPage() {
       />
 
       {/* Fund Transfer doesn't need Payee or Booking ID filtering usually, just dates and source hotel */}
-      <TransactionFilterBox showHotel={true} onSearch={handleSearch} />
+      <TransactionFilterBox companies={allCompanies} onSearch={handleSearch} />
 
       <div className="flex justify-end px-6 mb-2 -mt-2">
         <div className="bg-white border border-slate-200 rounded-lg px-4 py-2 shadow-sm flex items-center gap-3">
